@@ -1,6 +1,7 @@
 const dacs = require('./dacs/dacs.service.js');
 const milestones = require('./milestones/milestones.service.js');
 const campaigns = require('./campaigns/campaigns.service.js');
+const pools = require('./pools/pools.service.js');
 const users = require('./users/users.service.js');
 const uploads = require('./uploads/uploads.service.js');
 const donations = require('./donations/donations.service.js');
@@ -21,6 +22,7 @@ module.exports = function() {
   app.configure(dacs);
   app.configure(milestones);
   app.configure(campaigns);
+  app.configure(pools);
   app.configure(users);
   app.configure(uploads);
   app.configure(donationsHistory);
