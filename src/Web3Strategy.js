@@ -4,6 +4,8 @@ import Strategy from 'passport-strategy';
 import Accounts from 'web3-eth-accounts';
 import { isAddress, toChecksumAddress } from 'web3-utils';
 
+const sigUtil = require('eth-sig-util')
+
 const debug = Debug('passportjs:Web3Strategy');
 
 // TODO clean this up and split to separate package
@@ -39,7 +41,7 @@ class Web3Strategy extends Strategy {
 
   // authenticate(req, options) {
   authenticate(req) {
-    const { address, signature } = req.query;
+    const { address, signature, msgParams } = req.query;
 
     if (!address) return this.fail(400);
 
@@ -61,14 +63,26 @@ class Web3Strategy extends Strategy {
       // issue a challenge if there is not a valid message
       if (!message) return this._issueChallenge(address);
 
-      const recoveredAddress = this._recoverAddress(message, signature);
+      console.log('message', message);
+      console.log('signature', signature);
+      // const recoveredAddress = sigUtil this._recoverAddress(message, signature);
+      let recoveredAddress = sigUtil.recoverTypedSignature({
+        data: msgParams,
+        sig: signature
+      });
+      recoveredAddress = toChecksumAddress(recoveredAddress);
+      console.log('*********  address', address);
+      console.log('*********  recoveredAddress', recoveredAddress);
       const cAddress = toChecksumAddress(address);
+      console.log('*********  cAddress', cAddress);
 
       if (recoveredAddress !== cAddress)
         return this.fail('Recovered address does not match provided address');
 
       this.challenger.verify(cAddress, (err, user, info) => {
         if (!user) return this.fail('Recovered address rejected');
+        console.log('user', user);
+        console.log('info', info);
 
         this.success(user, info);
       });
