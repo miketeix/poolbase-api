@@ -1,6 +1,6 @@
 {
   "host": "http://ec2-18-188-196-89.us-east-2.compute.amazonaws.com",
-  "port": 3030,
+  "port": 3000,
   "dappUrl": "https://distracted-shockley-51ac50.netlify.com",
   "public": "../public/",
   "paginate": {
