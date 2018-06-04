@@ -40,7 +40,7 @@ const restrict = () => context => {
   };
 
   return getPools().then(
-    pools => (Array.isArray(pools) ? pools.forEach(canUpdate) : canUpdate(campaigns)),
+    pools => (Array.isArray(pools) ? pools.forEach(canUpdate) : canUpdate(pools)),
   );
 };
 
