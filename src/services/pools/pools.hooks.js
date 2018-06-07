@@ -95,11 +95,11 @@ module.exports = {
     get: [],
     create: [
       createdAt,
-      setAddress('ownerAddress'),
-      sanitizeAddress('ownerAddress', {
-        required: true,
-        validate: true,
-      }),
+      // setAddress('ownerAddress'),
+      // sanitizeAddress('ownerAddress', {
+      //   required: true,
+      //   validate: true,
+      // }),
       // isProjectAllowed(),
       sanitizeHtml('description'),
     ],

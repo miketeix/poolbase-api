@@ -8,7 +8,8 @@ module.exports = function(app) {
     autoload: true,
   });
 
-  Model.ensureIndex({ fieldName: 'address', unique: true });
+// ToDo: make the unique field index based on 'email'
+  Model.ensureIndex({ fieldName: 'email', unique: true });
 
   return Model;
 };

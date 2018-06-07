@@ -1,5 +1,6 @@
 import authentication from 'feathers-authentication';
 import jwt from 'feathers-authentication-jwt';
+import local from '@feathersjs/authentication-local';
 import web3 from './authenticationWeb3';
 
 export default function() {
@@ -10,6 +11,7 @@ export default function() {
   app.configure(authentication(config));
   app.configure(jwt());
   app.configure(web3());
+  app.configure(local());
 
   // The `authentication` service is used to create a JWT.
   // The before `create` hook registers strategies that can be used
@@ -18,6 +20,6 @@ export default function() {
     before: {
       create: [authentication.hooks.authenticate(config.strategies)],
       remove: [authentication.hooks.authenticate('jwt')],
-    },
+    }
   });
 }

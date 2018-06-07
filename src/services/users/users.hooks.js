@@ -1,5 +1,6 @@
 import commons from 'feathers-hooks-common';
 import { restrictToOwner } from 'feathers-authentication-hooks';
+import local from '@feathersjs/authentication-local';
 import { toChecksumAddress } from 'web3-utils';
 
 import notifyOfChange from '../../hooks/notifyOfChange';
@@ -14,11 +15,12 @@ const normalizeId = () => context => {
   return context;
 };
 
+// ToDo: figure out what ownerField means in this context
 const restrict = [
-  normalizeId(),
+  // normalizeId(),
   restrictToOwner({
-    idField: 'address',
-    ownerField: 'address',
+    idField: '_id',
+    ownerField: '_id',
   }),
 ];
 
@@ -27,19 +29,14 @@ const address = [
   sanitizeAddress('address', { required: true, validate: true }),
 ];
 
+// ToDo: Sort out realtime updates to other models
 const notifyParents = [
-  {
-    service: 'campaigns',
-    parentField: 'ownerAddress',
-    childField: 'address',
-    watchFields: ['avatar', 'name'],
-  },
-  {
-    service: 'dacs',
-    parentField: 'ownerAddress',
-    childField: 'address',
-    watchFields: ['avatar', 'name'],
-  },
+  // {
+  //   service: 'pools',
+  //   parentField: 'ownerId',
+  //   childField: '_id',
+  //   watchFields: ['avatar', 'name'],
+  // }
 ];
 
 // TODO write a hook to prevent overwriting a non-zero giverId with 0
@@ -47,19 +44,19 @@ const notifyParents = [
 module.exports = {
   before: {
     all: [],
-    find: [sanitizeAddress('address')],
-    get: [normalizeId()],
-    create: [commons.discard('_id'), ...address, createdAt],
+    find: [],
+    get: [],
+    create: [local.hooks.hashPassword(), commons.discard('_id'), createdAt],
     update: [...restrict, commons.stashBefore(), updatedAt],
     patch: [...restrict, commons.stashBefore(), updatedAt],
     remove: [commons.disallow()],
   },
 
   after: {
-    all: [commons.when(hook => hook.params.provider, commons.discard('_id'))],
+    all: [commons.when(hook => hook.params.provider)], //commons.discard('_id')
     find: [],
     get: [],
-    create: [],
+    create: [local.hooks.protect('password')],
     update: [notifyOfChange(...notifyParents)],
     patch: [notifyOfChange(...notifyParents)],
     remove: [notifyOfChange(...notifyParents)],

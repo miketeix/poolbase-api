@@ -37,6 +37,7 @@
     "prettier:write": "prettier 'src/app/**/*.js' --write"
   },
   "dependencies": {
+    "@feathersjs/authentication-local": "^1.2.1",
     "bignumber.js": "^6.0.0",
     "body-parser": "^1.17.2",
     "compression": "^1.7.0",
