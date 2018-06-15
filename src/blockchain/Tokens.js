@@ -1,6 +1,6 @@
 import Contract from 'web3-eth-contract';
 import { toBN } from 'web3-utils';
-import { LPPCampaign } from 'lpp-campaign';
+// import { LPPCampaign } from 'lpp-campaign';
 import { LPPDacs } from 'lpp-dacs';
 
 import { getTokenInformation } from './helpers';
@@ -33,12 +33,12 @@ class Tokens {
     const decodedEvent = decodeEventABI(event);
     console.log('handling campaign GenerateTokens Event: ', decodedEvent); // eslint-disable-line no-console
 
-    new LPPCampaign(this.web3, decodedEvent.address)
-      .token()
-      .then(token =>
-        this.updateTokens(token, decodedEvent.returnValues.addr, decodedEvent.returnValues.amount),
-      )
-      .catch(console.error); // eslint-disable-line no-console
+    // new LPPCampaign(this.web3, decodedEvent.address)
+    //   .token()
+    //   .then(token =>
+    //     this.updateTokens(token, decodedEvent.returnValues.addr, decodedEvent.returnValues.amount),
+    //   )
+    //   .catch(console.error); // eslint-disable-line no-console
   }
 
   dacTokensGenerated(event) {

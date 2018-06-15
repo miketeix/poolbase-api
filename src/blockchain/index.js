@@ -1,9 +1,9 @@
 import Web3 from 'web3';
 import logger from 'winston';
 
-import LiquidPledgingMonitor from './LiquidPledgingMonitor';
-import FailedTxMonitor from './FailedTxMonitor';
-import { LiquidPledging, LPVault } from 'giveth-liquidpledging-token';
+// import LiquidPledgingMonitor from './LiquidPledgingMonitor';
+// import FailedTxMonitor from './FailedTxMonitor';
+// import { LiquidPledging, LPVault } from 'giveth-liquidpledging-token';
 import { LPPCappedMilestones } from 'lpp-capped-milestone-token';
 import { LPPDacs } from 'lpp-dacs';
 
@@ -29,28 +29,28 @@ export default function() {
       setInterval(web3.eth.net.getId, 45 * 1000);
     });
 
-    txMonitor = new FailedTxMonitor(web3, app);
-    txMonitor.start();
+    // txMonitor = new FailedTxMonitor(web3, app);
+    // txMonitor.start();
 
     // TODO investigate this
     // for some reason, if we have the contracts in getNetwork as in commit #67196cd807c52785367aee5224e8d6e5134015c8
     // upon reconnection, the web3 provider will not update and will throw "connection not open on send()"
     // maybe https://github.com/ethereum/web3.js/issues/1188 is the issue?
-    const liquidPledging = new LiquidPledging(web3, blockchain.liquidPledgingAddress);
-    liquidPledging.$vault = new LPVault(web3, blockchain.vaultAddress);
-    const cappedMilestones = new LPPCappedMilestones(web3, blockchain.cappedMilestoneAddress);
-    const lppDacs = new LPPDacs(web3, blockchain.dacsAddress);
+    // const liquidPledging = new LiquidPledging(web3, blockchain.liquidPledgingAddress);
+    // liquidPledging.$vault = new LPVault(web3, blockchain.vaultAddress);
+    // const cappedMilestones = new LPPCappedMilestones(web3, blockchain.cappedMilestoneAddress);
+    // const lppDacs = new LPPDacs(web3, blockchain.dacsAddress);
 
-    lpMonitor = new LiquidPledgingMonitor(
-      app,
-      web3,
-      liquidPledging,
-      cappedMilestones,
-      lppDacs,
-      txMonitor,
-      opts,
-    );
-    lpMonitor.start();
+    // lpMonitor = new LiquidPledgingMonitor(
+    //   app,
+    //   web3,
+    //   liquidPledging,
+    //   cappedMilestones,
+    //   lppDacs,
+    //   txMonitor,
+    //   opts,
+    // );
+    // lpMonitor.start();
   };
 
   // if the websocket connection drops, attempt to re-connect

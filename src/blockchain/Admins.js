@@ -2,8 +2,8 @@ import logger from 'winston';
 
 import { LPPCappedMilestones } from 'lpp-capped-milestone-token';
 import { LPPCappedMilestonesRuntimeByteCode } from 'lpp-capped-milestone-token/build/LPPCappedMilestones.sol';
-import { LPPCampaign } from 'lpp-campaign';
-import { LPPCampaignRuntimeByteCode } from 'lpp-campaign/build/LPPCampaignFactory.sol';
+// import { LPPCampaign } from 'lpp-campaign';
+// import { LPPCampaignRuntimeByteCode } from 'lpp-campaign/build/LPPCampaignFactory.sol';
 
 import { getTokenInformation, milestoneStatus, pledgeState } from './helpers';
 
@@ -242,8 +242,8 @@ class Admins {
       .then(([project, byteCode]) => {
         if (byteCode === LPPCappedMilestonesRuntimeByteCode)
           return this._addMilestone(project, projectId, txHash);
-        if (byteCode === LPPCampaignRuntimeByteCode)
-          return this._addCampaign(project, projectId, txHash);
+        // if (byteCode === LPPCampaignRuntimeByteCode)
+        //   return this._addCampaign(project, projectId, txHash);
 
         logger.error('AddProject event with unknown plugin byteCode ->', event);
       });
@@ -397,37 +397,37 @@ class Admins {
         return data[0];
       });
 
-    const lppCampaign = new LPPCampaign(this.web3, project.plugin);
+    // const lppCampaign = new LPPCampaign(this.web3, project.plugin);
 
-    const getTokenInfo = () =>
-      lppCampaign.token().then(addr => getTokenInformation(this.web3, addr));
+    // const getTokenInfo = () =>
+      // lppCampaign.token().then(addr => getTokenInformation(this.web3, addr));
 
-    return Promise.all([
-      findCampaign(),
-      lppCampaign.isCanceled(),
-      lppCampaign.reviewer(),
-      getTokenInfo(),
-    ])
-      .then(([campaign, canceled, reviewer, tokenInfo]) =>
-        campaigns.patch(campaign._id, {
-          projectId,
-          title: project.name,
-          reviewerAddress: reviewer,
-          pluginAddress: project.plugin,
-          status: canceled ? 'Canceled' : 'Active',
-          mined: true,
-          tokenAddress: tokenInfo.address,
-          tokenSymbol: tokenInfo.symbol,
-          tokenName: tokenInfo.name,
-        }),
-      )
-      .then(campaign => {
-        this._addPledgeAdmin(projectId, 'campaign', campaign._id).then(() => campaign);
-      })
-      .catch(err => {
-        if (err instanceof BreakSignal) return;
-        logger.error('_addCampaign error ->', err);
-      });
+    // return Promise.all([
+    //   findCampaign(),
+    //   lppCampaign.isCanceled(),
+    //   lppCampaign.reviewer(),
+    //   getTokenInfo(),
+    // ])
+    //   .then(([campaign, canceled, reviewer, tokenInfo]) =>
+    //     campaigns.patch(campaign._id, {
+    //       projectId,
+    //       title: project.name,
+    //       reviewerAddress: reviewer,
+    //       pluginAddress: project.plugin,
+    //       status: canceled ? 'Canceled' : 'Active',
+    //       mined: true,
+    //       tokenAddress: tokenInfo.address,
+    //       tokenSymbol: tokenInfo.symbol,
+    //       tokenName: tokenInfo.name,
+    //     }),
+    //   )
+    //   .then(campaign => {
+    //     this._addPledgeAdmin(projectId, 'campaign', campaign._id).then(() => campaign);
+    //   })
+    //   .catch(err => {
+    //     if (err instanceof BreakSignal) return;
+    //     logger.error('_addCampaign error ->', err);
+    //   });
   }
 
   updateProject(event) {
