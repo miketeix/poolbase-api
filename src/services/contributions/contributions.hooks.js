@@ -4,6 +4,7 @@ import commons from 'feathers-hooks-common';
 
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
+import addTxData from '../../hooks/addTxData';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
 // restrict(),
@@ -11,17 +12,9 @@ import { updatedAt, createdAt } from '../../hooks/timestamps';
 module.exports = {
   before: {
     all: [commons.paramsFromClient('schema')],
-    find: [sanitizeAddress('investorAddress')],
+    find: [sanitizeAddress('contributorAddress')],
     get: [],
     create: [
-      setAddress('investorAddress'),
-      sanitizeAddress(
-        'investorAddress',
-        {
-          required: true,
-          validate: true,
-        },
-      ),
       createdAt,
       context => {
         if (context.data.createdAt) return context;
@@ -29,11 +22,11 @@ module.exports = {
       },
     ],
     update: [ commons.disallow()],
-    // update: [ sanitizeAddress('investorAddress', { validate: true }), updatedAt],
+    // update: [ sanitizeAddress('contributorAddress', { validate: true }), updatedAt],
     patch: [ commons.disallow()],
     // patch: [
     //   restrict(),
-    //   sanitizeAddress('investorAddress', { validate: true }),
+    //   sanitizeAddress('contributorAddress', { validate: true }),
     //   stashDonationIfPending(),
     //   updatedAt,
     // ],
@@ -44,7 +37,7 @@ module.exports = {
     all: [],
     find: [],
     get: [],
-    create: [],
+    create: [addTxData],
     update: [],
     patch: [],
     remove: [],

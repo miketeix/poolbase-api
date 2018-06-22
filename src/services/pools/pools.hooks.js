@@ -49,8 +49,8 @@ const schema = {
     {
       service: 'users',
       nameAs: 'owner',
-      parentField: 'ownerAddress',
-      childField: 'address',
+      parentField: 'owner',
+      childField: '_id',
     },
   ],
 };

@@ -5,7 +5,7 @@ const pools = require('./pools/pools.service.js');
 const users = require('./users/users.service.js');
 const uploads = require('./uploads/uploads.service.js');
 const donations = require('./donations/donations.service.js');
-const investments = require('./investments/investments.service.js');
+const contributions = require('./contributions/contributions.service.js');
 
 import challenges from './challenges/challenges.service.js';
 
@@ -28,7 +28,7 @@ module.exports = function() {
   app.configure(uploads);
   app.configure(donationsHistory);
   app.configure(donations);
-  app.configure(investments);
+  app.configure(contributions);
   app.configure(challenges);
   app.configure(pledgeAdmins);
   app.configure(donationTokens);

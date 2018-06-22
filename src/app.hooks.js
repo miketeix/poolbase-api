@@ -5,6 +5,7 @@ import logger from './hooks/logger';
 
 const AUTHENTICATION_SERVICE = 'authentication';
 const USERS_SERVICE = 'users';
+const CONTRIBUTIONS_SERVICE = 'contributions';
 
 const excludableRestrictToAuthenticated = (...servicesToExclude) => context => {
   if (servicesToExclude.indexOf(context.path) > -1) return context;
@@ -24,7 +25,7 @@ export default {
     all: [],
     find: [],
     get: [],
-    create: [authenticate(), excludableRestrictToAuthenticated(AUTHENTICATION_SERVICE, USERS_SERVICE)],
+    create: [authenticate(), excludableRestrictToAuthenticated(AUTHENTICATION_SERVICE, USERS_SERVICE, CONTRIBUTIONS_SERVICE)],
     update: [authenticate(), restrictToAuthenticated()],
     patch: [authenticate(), restrictToAuthenticated()],
     remove: [authenticate(), excludableRestrictToAuthenticated(AUTHENTICATION_SERVICE)],
