@@ -28,19 +28,21 @@ const findNonceForPool = async (poolAddress, wallet, service) => {
 export default async context => {
 
   // ToDo: checkWhitelist
-  const { dataFieldAddress, nodeUrl } = context.app.get('blockchain');
+  const { poolbaseSignerAddress, nodeUrl } = context.app.get('blockchain');
   const web3 = new Web3(nodeUrl);
+
   const { wallet, amount, poolAddress } = context.result;
   const service = context.app.service('pools');
   const nonce = await findNonceForPool(poolAddress, wallet, service);
 
   const hash = soliditySha3(wallet, amount, poolAddress, nonce);
-  const signature = await web3.eth.sign(hash, dataFieldAddress );
+  const signature = await web3.eth.sign(hash, poolbaseSignerAddress );
 
   const r = signature.slice(0, 66);
   const s = `0x${signature.slice(66, 130)}`;
   const v = hexToNumber(signature.slice(130, 132))+27;
 
+  // ToDo: abi encode function and estimate gas limit
   const txData = 'DepostiFunctionEncodedAbi'+r+s+v;
   const gasLimit = 2000000;
   setByDot(context.result, 'txData', txData);

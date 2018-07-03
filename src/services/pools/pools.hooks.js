@@ -1,10 +1,13 @@
 import commons from 'feathers-hooks-common';
 import errors from 'feathers-errors';
+import logger from 'winston';
+import intersection from 'lodash.intersection';
 
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
 import sanitizeHtml from '../../hooks/sanitizeHtml';
 import isProjectAllowed from '../../hooks/isProjectAllowed';
+import hasQueryParam from '../../hooks/hasQueryParam';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
 const restrict = () => context => {
@@ -54,44 +57,45 @@ const schema = {
     },
   ],
 };
-const countMilestones = (item, service) =>
-  service
-    .find({
-      query: {
-        poolId: item._id,
-        projectId: {
-          $gt: '0', // 0 is a pending milestone
-        },
-        $limit: 0,
-      },
-    })
-    .then(count => Object.assign(item, { milestonesCount: count.total }));
 
-// add milestonesCount to each DAC object
-const addMilestoneCounts = () => context => {
-  const service = context.app.service('milestones');
-
-  const items = commons.getItems(context);
-
-  let promises;
-  if (Array.isArray(items)) {
-    promises = items.map(item => countMilestones(item, service));
-  } else {
-    promises = [countMilestones(items, service)];
+const userWhitelistedAddresses = async context => {
+  try {
+    // console.log('context.params', context.params);
+    const { wallets } = await context.app.service('users').get(context.params.query.userWhitelisted)
+    const walletAddresses = wallets.map(({address})=> address);
+    const { whitelist } = context.result;
+    context.result = intersection(walletAddresses, whitelist);
+    return context;
+  } catch(err) {
+    logger.error(err);
+    throw new errors.BadRequest();
   }
+}
 
-  return Promise.all(promises).then(
-    results =>
-      Array.isArray(items)
-        ? commons.replaceItems(context, results)
-        : commons.replaceItems(context, results[0]),
-  );
-};
+const addContributionCounts = async context => {
+  try {
+    const pools = context.result.data;
+    const poolsWithCounts = await Promise.all(
+      pools.map(async (pool) => {
+        const { total: count } = await context.app.service('contributions').find({ query: { $limit: 0, poolAddress: pool.address }});
+        console.log('count', count);
+        pool.contributionCount = count;
+        return pool;
+      })
+    );
+    context.result.data = poolsWithCounts;
+    return context;
+  } catch(err) {
+    logger.error(err);
+    throw new errors.BadRequest();
+  }
+}
+
 
 module.exports = {
   before: {
     all: [],
-    find: [sanitizeAddress('ownerAddress')],
+    find: [ sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
     get: [],
     create: [
       createdAt,
@@ -120,8 +124,8 @@ module.exports = {
 
   after: {
     all: [commons.populate({ schema })],
-    find: [addMilestoneCounts()],
-    get: [addMilestoneCounts()],
+    find: [addContributionCounts],
+    get: [commons.iff(hasQueryParam('userWhitelisted'), userWhitelistedAddresses )],
     create: [],
     update: [],
     patch: [],

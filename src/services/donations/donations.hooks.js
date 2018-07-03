@@ -242,8 +242,8 @@ module.exports = {
           required: true,
           validate: true,
         },
-        createdAt,
       ),
+      createdAt,
       context => {
         if (context.data.createdAt) return context;
         context.data.createdAt = new Date();

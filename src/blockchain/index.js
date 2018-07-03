@@ -59,7 +59,7 @@ export default function() {
     web3.currentProvider.on('end', e => {
       logger.error(`connection closed reason: ${e.reason}, code: ${e.code}`);
 
-      txMonitor.close();
+      // txMonitor.close();
 
       const intervalId = setInterval(() => {
         logger.info('attempting to reconnect');

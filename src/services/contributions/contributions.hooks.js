@@ -2,24 +2,40 @@
 import errors from 'feathers-errors';
 import commons from 'feathers-hooks-common';
 
+import hasQueryParam from '../../hooks/hasQueryParam';
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
+import setOwnerId from '../../hooks/setOwnerId';
 import addTxData from '../../hooks/addTxData';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
+
+
+const contributorCountByPoolAddress = async context => {
+  try {
+    const poolAddress = context.params.query.countByPool;
+    const { total: count } = await context.service.find( { query: { $limit: 0, poolAddress }});
+
+    context.result = { count };
+    return context;
+  } catch(err) {
+    logger.error(err);
+    throw new errors.BadRequest();
+  }
+}
 
 // restrict(),
 
 module.exports = {
   before: {
     all: [commons.paramsFromClient('schema')],
-    find: [sanitizeAddress('contributorAddress')],
+    find: [
+      // sanitizeAddress('contributorAddress')],x
+      commons.iff(hasQueryParam('countByPoolAddress'), contributorCountByPoolAddress)
+    ],
     get: [],
     create: [
       createdAt,
-      context => {
-        if (context.data.createdAt) return context;
-        context.data.createdAt = new Date();
-      },
+      setOwnerId('ownerId'),
     ],
     update: [ commons.disallow()],
     // update: [ sanitizeAddress('contributorAddress', { validate: true }), updatedAt],
