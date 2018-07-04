@@ -9,19 +9,30 @@ import setOwnerId from '../../hooks/setOwnerId';
 import addTxData from '../../hooks/addTxData';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
+//
+// const contributorCountByPoolAddress = async context => {
+//   try {
+//     const poolAddress = context.params.query.countByPool;
+//     const { total: count } = await context.service.find( { query: { $limit: 0, poolAddress }});
+//
+//     context.result = { count };
+//     return context;
+//   } catch(err) {
+//     logger.error(err);
+//     throw new errors.BadRequest();
+//   }
+// }
 
-const contributorCountByPoolAddress = async context => {
-  try {
-    const poolAddress = context.params.query.countByPool;
-    const { total: count } = await context.service.find( { query: { $limit: 0, poolAddress }});
-
-    context.result = { count };
-    return context;
-  } catch(err) {
-    logger.error(err);
-    throw new errors.BadRequest();
-  }
-}
+const schema = {
+  include: [
+    {
+      service: 'pools',
+      nameAs: 'pool',
+      parentField: 'pool',
+      childField: '_id',
+    },
+  ],
+};
 
 // restrict(),
 
@@ -30,7 +41,7 @@ module.exports = {
     all: [commons.paramsFromClient('schema')],
     find: [
       // sanitizeAddress('contributorAddress')],x
-      commons.iff(hasQueryParam('countByPoolAddress'), contributorCountByPoolAddress)
+      // commons.iff(hasQueryParam('countByPoolAddress'), contributorCountByPoolAddress)
     ],
     get: [],
     create: [
@@ -50,7 +61,7 @@ module.exports = {
   },
 
   after: {
-    all: [],
+    all: [commons.populate({ schema })],
     find: [],
     get: [],
     create: [addTxData],

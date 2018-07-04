@@ -58,6 +58,36 @@ const schema = {
   ],
 };
 
+// const contributionCountSchema = () => ({
+//   include: [
+//     {
+//       service: 'contributions',
+//       nameAs: 'contributionCount',
+//       select:  (hook, parentItem) => {
+//         // console.log('hook', hook);
+//         // console.log('parentItem._id', parentItem._id);
+//         return({  pool: parentItem._id, $limit: 0 }) //$limit: 0,
+//       },
+//     },
+//   ],
+// });
+
+//
+// const poolResolvers = {
+//   joins: {
+//     contributionCount: (...args) => async pool => {
+//       console.log('contributions', contributions);
+//       const result = await contributions.find({
+//         query: {
+//           pool: pool._id, $limit: 0
+//         }
+//       });
+//       console.log(result);
+//       // pool.contributionCount = result.total
+//     }
+//   }
+// };
+
 const userWhitelistedAddresses = async context => {
   try {
     // console.log('context.params', context.params);
@@ -71,31 +101,39 @@ const userWhitelistedAddresses = async context => {
     throw new errors.BadRequest();
   }
 }
-
+//
 const addContributionCounts = async context => {
-  try {
-    const pools = context.result.data;
-    const poolsWithCounts = await Promise.all(
-      pools.map(async (pool) => {
-        const { total: count } = await context.app.service('contributions').find({ query: { $limit: 0, poolAddress: pool.address }});
-        console.log('count', count);
-        pool.contributionCount = count;
-        return pool;
-      })
-    );
-    context.result.data = poolsWithCounts;
-    return context;
-  } catch(err) {
-    logger.error(err);
-    throw new errors.BadRequest();
+
+  if (context.params.provider === undefined) {
+    console.log('provider', 'undefined');
+  } else {
+    console.log('provider', context.params.provider);
   }
+  // try {
+  //   const pools = context.result.data;
+  //   console.log('pools', pools);
+  //   const poolsWithCounts = await Promise.all(
+  //     pools.map(async (pool) => {
+  //       const { total: count } = await context.app.service('contributions').find({ query: { $limit: 0, pool: pool._id }});
+  //       console.log('count', count);
+  //       pool.contributionCount = count;
+  //       return pool;
+  //     })
+  //   );
+  //   context.result.data = poolsWithCounts;
+  //   return context;
+  // } catch(err) {
+  //   logger.error(err);
+  //   throw new errors.BadRequest();
+  // }
+  return context
 }
 
 
 module.exports = {
   before: {
     all: [],
-    find: [ sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
+    find: [],// sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
     get: [],
     create: [
       createdAt,
@@ -124,7 +162,7 @@ module.exports = {
 
   after: {
     all: [commons.populate({ schema })],
-    find: [addContributionCounts],
+    find: [addContributionCounts], //commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
     get: [commons.iff(hasQueryParam('userWhitelisted'), userWhitelistedAddresses )],
     create: [],
     update: [],

@@ -3,39 +3,17 @@ import errors from 'feathers-errors';
 import { setByDot } from 'feathers-hooks-common';
 import { soliditySha3, hexToNumber } from 'web3-utils';
 
-const findNonceForPool = async (poolAddress, wallet, service) => {
-  const result = await service
-    .find({
-      query: {
-        address: poolAddress,
-        $select: [ 'nonces' ]
-      }
-    });
-
-  const pool = result.data[0];
-
-  if (pool) {
-    if (wallet in pool.nonces) {
-      return pool.nonces[wallet];
-    } else {
-      return 0;
-    }
-  } else {
-      throw new Error('No such pool exists');
-  }
-}
 
 export default async context => {
 
   // ToDo: checkWhitelist
   const { poolbaseSignerAddress, nodeUrl } = context.app.get('blockchain');
   const web3 = new Web3(nodeUrl);
+  const { wallet, amount, pool } = context.result;
 
-  const { wallet, amount, poolAddress } = context.result;
-  const service = context.app.service('pools');
-  const nonce = await findNonceForPool(poolAddress, wallet, service);
+  const nonce = (wallet in pool.nonces) ?  pool.nonces[wallet] : 0;
 
-  const hash = soliditySha3(wallet, amount, poolAddress, nonce);
+  const hash = soliditySha3(wallet, amount, pool.address, nonce);
   const signature = await web3.eth.sign(hash, poolbaseSignerAddress );
 
   const r = signature.slice(0, 66);
