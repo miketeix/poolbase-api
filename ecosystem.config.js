@@ -33,33 +33,22 @@ module.exports = {
    */
   deploy : {
     production : {
-      user : 'node',
+      user : 'ec2-user',
       host : '212.83.163.1',
-      ref  : 'origin/master',
-      repo : 'git@github.com:repo.git',
+      ref  : 'origin/develop',
+      repo : 'git@bitbucket.org:felixpool/poolbase-api.git',
       path : '/var/www/production',
       'post-deploy' : 'npm install && pm2 reload ecosystem.config.js --env production'
     },
     staging : {
-      user : 'node',
+      user : 'ec2-user',
       host : '212.83.163.1',
-      ref  : 'origin/master',
-      repo : 'git@github.com:repo.git',
+      ref  : 'origin/develop',
+      repo : 'git@bitbucket.org:felixpool/poolbase-api.git',
       path : '/var/www/staging',
       'post-deploy' : 'npm install && pm2 reload ecosystem.config.js --env staging',
       env  : {
         NODE_ENV: 'staging'
-      }
-    },
-    dev : {
-      user : 'node',
-      host : '212.83.163.1',
-      ref  : 'origin/master',
-      repo : 'git@github.com:repo.git',
-      path : '/var/www/development',
-      'post-deploy' : 'npm install && pm2 reload ecosystem.config.js --env dev',
-      env  : {
-        NODE_ENV: 'dev'
       }
     }
   }
