@@ -1,0 +1,187 @@
+import logger from 'winston';
+import Pools from './Pools';
+// import Contributions from './Contributions';
+import createModel from '../models/blockchain.model'; // for storing blocknumber in db
+import EventQueue from './EventQueue';
+// import { LiquidPledgingState } from 'giveth-liquidpledging-token';
+
+// Storing this in the db ensures that we don't miss any events on a restart
+const defaultConfig = {
+  lastBlock: undefined,
+};
+
+export default class {
+  constructor(app, web3, poolbaseFactory, poolbaseEventEmitter, poolbase, failedTxMonitor, opts) {
+    this.app = app;
+    this.web3 = web3;
+    this.poolbaseFactory = poolbaseFactory;
+    this.poolbaseEventEmitter = poolbaseEventEmitter;
+    this.poolbase = poolbase;
+    // this.failedTxMonitor = failedTxMonitor;
+
+    const eventQueue = new EventQueue();
+
+    this.pools = new Pools(app, this.poolbase);
+    // this.contributions = new Contributions(app, this.poolbase);
+    this.model = createModel(app);// for storing blocknumber in db
+
+    if (opts.startingBlock && opts.startingBlock !== 0) {
+      defaultConfig.lastBlock = opts.startingBlock - 1;
+    }
+  }
+
+  /**
+   * subscribe to all events that we are interested in
+   */
+  start() {
+    // starts listening to all events emitted by poolbase
+    this.getConfig().then(config => {
+      this.config = config;
+      this.subscribePoolFactoryEvents();
+      // this.subscribePoolbaseEvents();
+    });
+
+    // this.failedTxMonitor.on(this.failedTxMonitor.POOL_EVENT, this.handleEvent.bind(this));
+    // this.failedTxMonitor.on(this.failedTxMonitor.CONTRIBUTION_EVENT, this.handleEvent.bind(this));
+  }
+
+  // semi-private methods:
+
+  /**
+   * subscribe to Pool Factory events
+   */
+  subscribePoolFactoryEvents() {
+    // starts a listener on the pool factory contract
+    this.poolbaseFactory.events
+      .allEvents({ fromBlock: this.config.lastBlock + 1 || 1 })
+      .on('data', this.handleEvent.bind(this))
+      .on('changed', event => {
+        // I think this is emitted when a chain reorg happens and the tx has been removed
+        logger.info('changed: ', event);
+        // new LiquidPledgingState(this.liquidPledging).getState().then(state => {
+        //   logger.info('liquidPledging state at changed event: ', JSON.stringify(state, null, 2));
+        // });
+      })
+      .on('error', err => logger.error('SUBSCRIPTION ERROR: ', err));
+  }
+  /**
+   * subscribe to PB events
+   */
+  subscribePoolbaseEvents() {
+    // starts a listener on the liquidPledging contract
+    this.poolbaseEventEmitter.events
+      .allEvents({ fromBlock: this.config.lastBlock + 1 || 1 })
+      .on('data', this.handleEvent.bind(this))
+      .on('changed', event => {
+        // I think this is emitted when a chain reorg happens and the tx has been removed
+        logger.info('changed: ', event);
+        // new LiquidPledgingState(this.liquidPledging).getState().then(state => {
+        //   logger.info('liquidPledging state at changed event: ', JSON.stringify(state, null, 2));
+        // });
+      })
+      .on('error', err => logger.error('SUBSCRIPTION ERROR: ', err));
+  }
+
+  /**
+   * get config from database
+   *
+   * @return {Promise}
+   * @private
+   */
+  getConfig() {
+    return new Promise((resolve, reject) => {
+      this.model.findOne({}, (err, doc) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        if (!doc) {
+          resolve(defaultConfig);
+          return;
+        }
+
+        resolve(doc);
+      });
+    });
+  }
+
+  /**
+   * update the config if needed
+   *
+   * @param blockNumber
+   * @private
+   */
+  updateConfig(blockNumber) {
+    let onConfigInitialization;
+    if (this.initializingConfig) {
+      onConfigInitialization = () => this.updateConfig(blockNumber);
+      return;
+    }
+
+    if (!this.config.lastBlock || this.config.lastBlock < blockNumber) {
+      this.config.lastBlock = blockNumber;
+
+      if (!this.config._id) this.initializingConfig = true;
+
+      this.model.update(
+        { _id: this.config._id },
+        this.config,
+        { upsert: true },
+        (err, numAffected, affectedDocs, upsert) => {
+          if (err) logger.error('updateConfig ->', err);
+
+          if (upsert) {
+            this.config._id = affectedDocs._id;
+            this.initializingConfig = false;
+            if (onConfigInitialization) onConfigInitialization();
+          }
+        },
+      );
+    }
+  }
+
+  handleEvent(event) {
+    this.updateConfig(event.blockNumber);
+
+    logger.info('handlingEvent: ', event);
+
+    switch (event.event) {
+      // PoolbaseFactory events
+      case 'ContractInstantiation':
+      this.pools.poolMade(event);
+      break;
+/*
+      // PoolbaseEventEmitter events
+      // Contributions
+      case 'TokenClaimed':
+      this.contributions.tokenClaimed(event);
+      break;
+      case 'ContributionMade':
+        this.contributions.contributionMade(event);
+        break;
+      case 'Refunded':
+        this.pools.refunded(event);
+        break;
+      // Pools
+      case 'Closed':
+        this.pools.closed(event);
+        break;
+      case 'RefundsEnabled':
+        this.pools.refundsEnabled(event);
+        break;
+      case 'TokenPayoutsEnabled':
+        this.pools.tokenPayoutsEnabled(event);
+        break;
+      case 'Pause':
+        this.pools.pause(event);
+        break;
+      case 'Unpause':
+        this.pools.unpause(event);
+        break;
+  */
+      default:
+        logger.error('Unknown event: ', event);
+    }
+  }
+}

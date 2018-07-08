@@ -11,6 +11,8 @@
   "uploadsBaseUrl": "https://poolbase-api.herokuapp.com/uploads/",
   "blockchain": {
     "nodeUrl": "wss://ropsten.infura.io/ws",
+    "poolFactoryAddress": "0x5904adeba7bc0550607c611e906e317338b8e6c2",
+    "eventEmitterAddress": "0xd84e2462b412bba3fd81f95812823f7c6a72bab9",
     "startingBlock": 0,
     "vaultAddress": "0xCfEB869F69431e42cdB54A4F4f105C19C080A601",
     "liquidPledgingAddress": "0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B",
