@@ -26,13 +26,14 @@ class Pools {
     if (event.event !== this.EVENTS.CONTRACT_INSTANTIATION)
       throw new Error(`pools.deployed only handles ${this.EVENTS.CONTRACT_INSTANTIATION} events`);
 
-    const { sender, instantiation } = event.returnValues;
+    const { sender, instantiation, hashMessage } = event.returnValues;
 
     this.pools
       .find({
         query: {
           ownerAddress: sender,
-          status: 'pending_deployment' // ToDo: after updating to mongo, will place all statuses in enum
+          status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
+          inputsHash: hashMessage 
         }
       })
       .then(({ data }) => {

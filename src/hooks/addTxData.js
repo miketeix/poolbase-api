@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import errors from 'feathers-errors';
 import { setByDot } from 'feathers-hooks-common';
-import { soliditySha3, hexToNumber } from 'web3-utils';
+import { soliditySha3, hexToNumber, toWei } from 'web3-utils';
 
 
 export default async context => {
@@ -13,7 +13,7 @@ export default async context => {
 
   const nonce = (wallet in pool.nonces) ?  pool.nonces[wallet] : 0;
 
-  const hash = soliditySha3(wallet, amount, pool.address, nonce);
+  const hash = soliditySha3(wallet, toWei(parseFloat(amount, 10)), pool.address, nonce);
   const signature = await web3.eth.sign(hash, poolbaseSignerAddress );
 
   const r = signature.slice(0, 66);

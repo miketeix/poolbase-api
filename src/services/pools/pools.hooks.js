@@ -9,6 +9,9 @@ import sanitizeHtml from '../../hooks/sanitizeHtml';
 import isProjectAllowed from '../../hooks/isProjectAllowed';
 import hasQueryParam from '../../hooks/hasQueryParam';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
+import { soliditySha3, toWei } from 'web3-utils';
+
+import { percentToFractionArray } from '../../utils/fractions';
 
 const restrict = () => context => {
   // internal call are fine
@@ -101,7 +104,32 @@ const userWhitelistedAddresses = async context => {
     throw new errors.BadRequest();
   }
 }
-//
+
+const hashInputs = context => {
+  try {
+    const {
+      maxAllocation,, // convert to wei ??
+      fee, // convert to fraction  (2d array of numbers)
+      feePayoutCurrency, // convert from string ('ether') to boolean _isAdminFeeInWei
+      payoutAddress,
+      adminPayoutWallet
+      adminAddresses
+    } = context.data;
+
+
+    const itemsToHash = { // map of all values being hashed in PoolFactory smart contract
+      _maxAllocation: toWei(maxAllocation), //check if maxAllocation is a string, needs to be number
+      _adminPoolFee: percentToFractionArray( parseFloat(fee, 10)), // check if fee is string or number
+      _isAdminFeeInWei: (feePayoutCurrency === 'ether'),
+      _payoutWallet: payoutAddress,
+      _adminPayoutWallet: adminPayoutWallet , //** need _adminPayoutWallet,
+      _admins: adminAddresses
+    };
+    //ToDo: write a test to make sure hashing on SmartContract and here always produces the same result
+    context.data.inputsHash = soliditySha3(...Object.values(itemsToHash));
+    return context;
+}
+
 const addContributionCounts = async context => {
 
   if (context.params.provider === undefined) {
@@ -142,6 +170,7 @@ module.exports = {
         required: true,
         validate: true,
       }),
+      hashInputs,
       // isProjectAllowed(),
       // sanitizeHtml('description'),
     ],
