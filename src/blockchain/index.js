@@ -44,31 +44,24 @@ export default function() {
     // for some reason, if we have the contracts in getNetwork as in commit #67196cd807c52785367aee5224e8d6e5134015c8
     // upon reconnection, the web3 provider will not update and will throw "connection not open on send()"
     // maybe https://github.com/ethereum/web3.js/issues/1188 is the issue?
-    console.log('blockchain.poolFactoryAddress', blockchain.poolFactoryAddress);
+    const contractOptions = {
+      from: coinbaseAccount,
+      gasPrice: '20000000000'
+    };
+
     const poolbaseFactory = await new web3.eth.Contract(
       poolbaseFactoryArtifact.abi,
       blockchain.poolFactoryAddress,
-      {
-        from: coinbaseAccount,
-        gasPrice: '20000000000'
-    });
+      contractOptions);
 
     const poolbaseEventEmitter = await new web3.eth.Contract(
       poolbaseEventEmitterArtifact.abi,
       blockchain.eventEmitterAddress,
-      {
-        from: coinbaseAccount,
-        gasPrice: '20000000000'
-      });
+      contractOptions);
 
-    const poolbase = await new web3.eth.Contract(poolbaseArtifact.abi);
-
-    // const liquidPledging = new LiquidPledging(web3, blockchain.liquidPledgingAddress);
-    // liquidPledging.$vault = new LPVault(web3, blockchain.vaultAddress);
-    // const cappedMilestones = new LPPCappedMilestones(web3, blockchain.cappedMilestoneAddress);
-    // const lppDacs = new LPPDacs(web3, blockchain.dacsAddress);
-    // const poolbaseFactory = new LPPDacs(web3, blockchain.dacsAddress);
-
+    const poolbase = await new web3.eth.Contract(
+      poolbaseArtifact.abi,
+      contractOptions);
 
     poolbaseMonitor = new PoolBaseMonitor(
       app,
@@ -76,7 +69,6 @@ export default function() {
       poolbaseFactory,
       poolbaseEventEmitter,
       poolbase,
-      failedTxMonitor,
       opts,
     );
     poolbaseMonitor.start();

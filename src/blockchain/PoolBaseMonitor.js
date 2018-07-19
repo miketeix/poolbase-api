@@ -1,9 +1,22 @@
 import logger from 'winston';
 import Pools from './Pools';
-// import Contributions from './Contributions';
+import Contributions from './Contributions';
 import createModel from '../models/blockchain.model'; // for storing blocknumber in db
-import EventQueue from './EventQueue';
-// import { LiquidPledgingState } from 'giveth-liquidpledging-token';
+
+const { EVENTS: {
+  CONTRACT_INSTANTIATION,
+  CLOSED,
+  TOKEN_PAYOUTS_ENABLED,
+  REFUNDS_ENABLED,
+  PAUSE,
+  UNPAUSE,
+}} = Pools;
+
+const { EVENTS: {
+  CONTRIBUTION_MADE,
+  TOKEN_CLAIMED,
+  REFUNDED,
+}} = Pools;
 
 // Storing this in the db ensures that we don't miss any events on a restart
 const defaultConfig = {
@@ -11,18 +24,15 @@ const defaultConfig = {
 };
 
 export default class {
-  constructor(app, web3, poolbaseFactory, poolbaseEventEmitter, poolbase, failedTxMonitor, opts) {
+  constructor(app, web3, poolbaseFactory, poolbaseEventEmitter, poolbase, opts) {
     this.app = app;
     this.web3 = web3;
     this.poolbaseFactory = poolbaseFactory;
     this.poolbaseEventEmitter = poolbaseEventEmitter;
     this.poolbase = poolbase;
-    // this.failedTxMonitor = failedTxMonitor;
-
-    const eventQueue = new EventQueue();
 
     this.pools = new Pools(app, this.poolbase);
-    // this.contributions = new Contributions(app, this.poolbase);
+    this.contributions = new Contributions(app, this.poolbase);
     this.model = createModel(app);// for storing blocknumber in db
 
     if (opts.startingBlock && opts.startingBlock !== 0) {
@@ -38,11 +48,9 @@ export default class {
     this.getConfig().then(config => {
       this.config = config;
       this.subscribePoolFactoryEvents();
-      // this.subscribePoolbaseEvents();
+      this.subscribePoolbaseEvents();
     });
 
-    // this.failedTxMonitor.on(this.failedTxMonitor.POOL_EVENT, this.handleEvent.bind(this));
-    // this.failedTxMonitor.on(this.failedTxMonitor.CONTRIBUTION_EVENT, this.handleEvent.bind(this));
   }
 
   // semi-private methods:
@@ -148,38 +156,45 @@ export default class {
 
     switch (event.event) {
       // PoolbaseFactory events
-      case 'ContractInstantiation':
-      this.pools.poolMade(event);
+      case CONTRACT_INSTANTIATION:
+      this.pools.deployed(event);
       break;
-/*
+
       // PoolbaseEventEmitter events
-      // Contributions
-      case 'TokenClaimed':
+      //      ** Pool Events **
+      case CLOSED:
+      this.pools.closed(event);
+      break;
+
+      case TOKEN_PAYOUTS_ENABLED:
+      this.pools.newTokenBatch(event);
+      break;
+
+      case REFUNDS_ENABLED:
+      this.pools.refundsEnabled(event);
+      break;
+
+      case PAUSE:
+      this.pools.paused(event);
+      break;
+
+      case UNPAUSE:
+      this.pools.unpaused(event);
+      break;
+
+      //      ** Contribution Events **
+      case CONTRIBUTION_MADE:
+      this.contributions.contributionMade(event);
+      break;
+
+      case TOKEN_CLAIMED:
       this.contributions.tokenClaimed(event);
       break;
-      case 'ContributionMade':
-        this.contributions.contributionMade(event);
-        break;
-      case 'Refunded':
-        this.pools.refunded(event);
-        break;
-      // Pools
-      case 'Closed':
-        this.pools.closed(event);
-        break;
-      case 'RefundsEnabled':
-        this.pools.refundsEnabled(event);
-        break;
-      case 'TokenPayoutsEnabled':
-        this.pools.tokenPayoutsEnabled(event);
-        break;
-      case 'Pause':
-        this.pools.pause(event);
-        break;
-      case 'Unpause':
-        this.pools.unpause(event);
-        break;
-  */
+
+      case REFUNDED:
+      this.contributions.refunded(event);
+      break;
+
       default:
         logger.error('Unknown event: ', event);
     }
