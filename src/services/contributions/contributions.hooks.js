@@ -6,7 +6,7 @@ import hasQueryParam from '../../hooks/hasQueryParam';
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
 import setOwnerId from '../../hooks/setOwnerId';
-import addTxData from '../../hooks/addTxData';
+import addPendingTxData from './hooks/addPendingTxData';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
 //
@@ -45,12 +45,20 @@ module.exports = {
     ],
     get: [],
     create: [
+      /*
+        need hook that checks if address has already made contribution to this pool
+        - would send it back into pending_contribution - or create new Contribution?
+      */
+      // addStatus, // pending_contribution
       createdAt,
       setOwnerId('ownerId'),
+      addPendingTxData
     ],
     update: [ commons.disallow()],
     // update: [ sanitizeAddress('contributorAddress', { validate: true }), updatedAt],
-    patch: [ commons.disallow()],
+    patch: [
+      addPendingTxData
+    ],
     // patch: [
     //   restrict(),
     //   sanitizeAddress('contributorAddress', { validate: true }),
@@ -64,7 +72,7 @@ module.exports = {
     all: [commons.populate({ schema })],
     find: [],
     get: [],
-    create: [addTxData],
+    create: [],
     update: [],
     patch: [],
     remove: [],

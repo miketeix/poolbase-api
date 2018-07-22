@@ -106,14 +106,13 @@ const userWhitelistedAddresses = async context => {
 }
 
 const hashInputs = context => {
-  try {
     const {
-      maxAllocation,, // convert to wei ??
+      maxAllocation, // convert to wei ??
       fee, // convert to fraction  (2d array of numbers)
       feePayoutCurrency, // convert from string ('ether') to boolean _isAdminFeeInWei
       payoutAddress,
-      adminPayoutWallet
-      adminAddresses
+      adminPayoutWallet,
+      adminAddresses,
     } = context.data;
 
 

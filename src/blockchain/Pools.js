@@ -20,49 +20,53 @@ class Pools {
     this.app = app;
     this.web3 = web3;
     this.pools = this.app.service('pools');
+    this.transactions = this.app.service('transactions');
   }
 
-  deployed(event) {
+  async deployed(event) {
     if (event.event !== this.EVENTS.CONTRACT_INSTANTIATION)
       throw new Error(`pools.deployed only handles ${this.EVENTS.CONTRACT_INSTANTIATION} events`);
 
     const { sender, instantiation, hashMessage } = event.returnValues;
-
-    this.pools
-      .find({
-        query: {
-          ownerAddress: sender,
-          status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
-          inputsHash: hashMessage 
-        }
-      })
-      .then(({ data }) => {
-        const pool = data[0];
-        if (!pool) return;
-
-        return this.pools.patch(pool._id, {
-          status: 'active',
-          txHash: event.transactionHash,
-          contractAddress: instantiation,
+    try {
+      const { data: [pool]} =  await this.pools
+        .find({
+          query: {
+            ownerAddress: sender,
+            status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
+            inputsHash: hashMessage
+          }
         });
-      })
-      .catch(logger.error);
+
+      const transaction = await this.transactions.create({
+          poolStatus: 'pending_deployment',
+          txHash: event.transactionHash,
+          poolAddress: instantiation,
+          sender: sender,
+          data: {}
+      });
+
+      return this.pools.patch(pool._id, {
+        status: 'active',
+        contractAddress: instantiation,
+        $push: { transactions: transaction.txHash }
+      });
+
+    } catch(err) {
+      logger.error(err);
+    }
   }
   closed(event) {
     if (event.event !== this.EVENTS.CLOSED)
       throw new Error(`pools.closed only handles ${this.EVENTS.CLOSED} events`);
 
-    const { poolContractAddress } = event.returnValues;
-
-    this.updatePoolStatus(poolContractAddress, 'closed');
+    this.updatePool('closed', event);
   }
   async newTokenBatch(event) {
     if (event.event !== this.EVENTS.TOKEN_PAYOUTS_ENABLED)
       throw new Error(`pools.newTokenBatch only handles ${this.EVENTS.TOKEN_PAYOUTS_ENABLED} events`);
 
-    const { poolContractAddress } = event.returnValues;
-
-    await this.updatePoolStatus(poolContractAddress, 'payout_enabled');
+    await this.updatePool('payout_enabled', event);
     // ToDo: find all contributions for this pool and flip status to tokens_available
 
   }
@@ -70,47 +74,55 @@ class Pools {
     if (event.event !== this.EVENTS.REFUNDS_ENABLED)
       throw new Error(`pools.refundsEnabled only handles ${this.EVENTS.REFUNDS_ENABLED} events`);
 
-    const { poolContractAddress } = event.returnValues;
-    await this.updatePoolStatus(poolContractAddress, 'refunds_enabled');
+    await this.updatePool('refunds_enabled', event);
     // ToDo: find all contributions for this pool and flip status to refund_enabled
   }
   async paused(event) {
     if (event.event !== this.EVENTS.PAUSE)
       throw new Error(`pools.paused only handles ${this.EVENTS.PAUSE} events`);
 
-    const { poolContractAddress } = event.returnValues;
-
-    await this.updatePoolStatus(poolContractAddress, 'paused');
+    await this.updatePool('paused', event);
+    // ToDo: find all contributions for this pool and flip status to paused
   }
   unpaused(event) {
     if (event.event !== this.EVENTS.UNPAUSE)
       throw new Error(`pools.paused only handles ${this.EVENTS.UNPAUSE} events`);
 
-    const { poolContractAddress } = event.returnValues;
-
-    this.updatePoolStatus(poolContractAddress, null);
+    this.updatePool(null, event);
   }
 
-  static async updatePoolStatus(contractAddress, status) {
+  static async updatePool(newStatus, event) {
     try {
       const { data: [pool] } = await this.pools
         .find({
           query: {
-            contractAddress
+            contractAddress: event.returnValues.poolContractAddress
           }
         })
       if (!pool) return;
 
+      logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
+
+      const transaction = await this.transactions.create({
+          poolStatus: pool.status,//borrowing the pool or contribution status
+          txHash: event.transactionHash,
+          poolAddress: pool.address,
+          // eventName ??
+          // sender: event.returnValues.sender, // ToDo: see if Gus will pass along sender
+          data: { ...event.returnValues }
+      });
+
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      status ?
+      newStatus ?
         logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`) :
         logger.info(`Reverting status of pool ${contractAddress} from ${pool.status} to ${pool.lastStatus}`);
 
       return await this.pools.patch(pool._id, {
-        status: status ? status: pool.lastStatus,
-        lastStatus: pool.status
+        status: newStatus ? newStatus: pool.lastStatus,
+        lastStatus: pool.status,
+        $push: { transactions: transaction.txHash }
       });
     } catch(err) {
       logger.error(err);

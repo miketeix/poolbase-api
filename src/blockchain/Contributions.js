@@ -64,7 +64,7 @@ class Contributions {
 
       // check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
-      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`) :
+      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
 
       let amountClaimed;
       if (contribution.tokenAmountClaimed) {
@@ -78,7 +78,7 @@ class Contributions {
         tokenAmountClaimed: amountClaimed,
         $push: {
           transactions: transaction.txHash
-        }
+        },
         txHash: event.transactionHash, //ToDo: create TX Obj and add to array
       });
     } catch(err) {
@@ -127,7 +127,7 @@ class Contributions {
 
       // check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
-      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`) :
+      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
 
       return await this.contributions.patch(contribution._id, {
         status: newStatus,
