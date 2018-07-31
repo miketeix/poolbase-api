@@ -2,9 +2,9 @@ import Web3 from 'web3';
 import logger from 'winston';
 
 import PoolBaseMonitor from './PoolBaseMonitor';
-import poolbaseFactoryArtifact from './contracts/PoolbaseFactory.json';
-import poolbaseEventEmitterArtifact from './contracts/PoolbaseEventEmitter.json';
-import poolbaseArtifact from './contracts/Poolbase.json';
+import poolbaseFactoryAbi from './contracts/PoolbaseFactoryAbi.json';
+import poolbaseEventEmitterAbi from './contracts/PoolbaseEventEmitterAbi.json';
+import poolbaseAbi from './contracts/PoolbaseAbi.json';
 
 // import LiquidPledgingMonitor from './LiquidPledgingMonitor';
 // import FailedTxMonitor from './FailedTxMonitor';
@@ -46,22 +46,22 @@ export default function() {
     // maybe https://github.com/ethereum/web3.js/issues/1188 is the issue?
     const contractOptions = {
       from: coinbaseAccount,
-      gasPrice: '20000000000'
+      gasPrice: '20000000000',
     };
 
     const poolbaseFactory = await new web3.eth.Contract(
-      poolbaseFactoryArtifact.abi,
+      poolbaseFactoryAbi,
       blockchain.poolFactoryAddress,
-      contractOptions);
+      contractOptions,
+    );
 
     const poolbaseEventEmitter = await new web3.eth.Contract(
-      poolbaseEventEmitterArtifact.abi,
+      poolbaseEventEmitterAbi,
       blockchain.eventEmitterAddress,
-      contractOptions);
+      contractOptions,
+    );
 
-    const poolbase = await new web3.eth.Contract(
-      poolbaseArtifact.abi,
-      contractOptions);
+    const poolbase = await new web3.eth.Contract(poolbaseAbi, contractOptions);
 
     poolbaseMonitor = new PoolBaseMonitor(
       app,

@@ -6,14 +6,13 @@ import logger from 'winston';
 class Pools {
   static get EVENTS() {
     return {
-        CONTRACT_INSTANTIATION: 'ContractInstantiation',
-        CLOSED: 'Closed',
-        TOKEN_PAYOUTS_ENABLED: 'TokenPayoutsEnabled',
-        REFUNDS_ENABLED: 'RefundsEnabled',
-        PAUSE: 'Pause',
-        UNPAUSE: 'Unpause',
-
-    }
+      CONTRACT_INSTANTIATION: 'ContractInstantiation',
+      CLOSED: 'Closed',
+      TOKEN_PAYOUTS_ENABLED: 'TokenPayoutsEnabled',
+      REFUNDS_ENABLED: 'RefundsEnabled',
+      PAUSE: 'Pause',
+      UNPAUSE: 'Unpause',
+    };
   }
 
   constructor(app, web3) {
@@ -27,32 +26,30 @@ class Pools {
     if (event.event !== this.EVENTS.CONTRACT_INSTANTIATION)
       throw new Error(`pools.deployed only handles ${this.EVENTS.CONTRACT_INSTANTIATION} events`);
 
-    const { sender, instantiation, hashMessage } = event.returnValues;
+    const { msgSender, instantiation, hashMessage } = event.returnValues;
     try {
-      const { data: [pool]} =  await this.pools
-        .find({
-          query: {
-            ownerAddress: sender,
-            status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
-            inputsHash: hashMessage
-          }
-        });
+      const { data: [pool] } = await this.pools.find({
+        query: {
+          ownerAddress: msgSender,
+          status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
+          inputsHash: hashMessage,
+        },
+      });
 
       const transaction = await this.transactions.create({
-          poolStatus: 'pending_deployment',
-          txHash: event.transactionHash,
-          poolAddress: instantiation,
-          sender: sender,
-          data: {}
+        poolStatus: 'pending_deployment',
+        txHash: event.transactionHash,
+        poolAddress: instantiation,
+        msgSender,
+        data: {},
       });
 
       return this.pools.patch(pool._id, {
         status: 'active',
         contractAddress: instantiation,
-        $push: { transactions: transaction.txHash }
+        $push: { transactions: transaction.txHash },
       });
-
-    } catch(err) {
+    } catch (err) {
       logger.error(err);
     }
   }
@@ -64,11 +61,12 @@ class Pools {
   }
   async newTokenBatch(event) {
     if (event.event !== this.EVENTS.TOKEN_PAYOUTS_ENABLED)
-      throw new Error(`pools.newTokenBatch only handles ${this.EVENTS.TOKEN_PAYOUTS_ENABLED} events`);
+      throw new Error(
+        `pools.newTokenBatch only handles ${this.EVENTS.TOKEN_PAYOUTS_ENABLED} events`,
+      );
 
     await this.updatePool('payout_enabled', event);
     // ToDo: find all contributions for this pool and flip status to tokens_available
-
   }
   async refundsEnabled(event) {
     if (event.event !== this.EVENTS.REFUNDS_ENABLED)
@@ -93,40 +91,41 @@ class Pools {
 
   static async updatePool(newStatus, event) {
     try {
-      const { data: [pool] } = await this.pools
-        .find({
-          query: {
-            contractAddress: event.returnValues.poolContractAddress
-          }
-        })
+      const { data: [pool] } = await this.pools.find({
+        query: {
+          contractAddress: event.returnValues.poolContractAddress,
+        },
+      });
       if (!pool) return;
 
       logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
 
       const transaction = await this.transactions.create({
-          poolStatus: pool.status,//borrowing the pool or contribution status
-          txHash: event.transactionHash,
-          poolAddress: pool.address,
-          // eventName ??
-          // sender: event.returnValues.sender, // ToDo: see if Gus will pass along sender
-          data: { ...event.returnValues }
+        poolStatus: pool.status, // borrowing the pool or contribution status
+        txHash: event.transactionHash,
+        poolAddress: pool.address,
+        // eventName ??
+        sender: event.returnValues.msgSender,
+        data: { ...event.returnValues },
       });
 
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      newStatus ?
-        logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`) :
-        logger.info(`Reverting status of pool ${contractAddress} from ${pool.status} to ${pool.lastStatus}`);
+      newStatus
+        ? logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`)
+        : logger.info(
+            `Reverting status of pool ${contractAddress} from ${pool.status} to ${pool.lastStatus}`,
+          );
 
       return await this.pools.patch(pool._id, {
-        status: newStatus ? newStatus: pool.lastStatus,
+        status: newStatus || pool.lastStatus,
         lastStatus: pool.status,
-        $push: { transactions: transaction.txHash }
+        $push: { transactions: transaction.txHash },
       });
-    } catch(err) {
+    } catch (err) {
       logger.error(err);
-    };
+    }
   }
 }
 
