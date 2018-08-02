@@ -9,7 +9,7 @@ export const percentToFractionArray = (percentNumber) => {
   if (typeof percentNumber !== 'number')
     throw new Error(`percentToFractionArray only handles numbers, value: ${percentNumber} is type: ${typeof percentNumber}`);
   const decimalPlaces = precision(percentNumber);
-  const numerator = num * Math.pow(10, decimalPlaces);
+  const numerator = percentNumber * Math.pow(10, decimalPlaces);
   const denominator = Math.pow(100, decimalPlaces);
   return [ numerator, denominator ];
 }

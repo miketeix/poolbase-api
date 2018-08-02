@@ -112,17 +112,17 @@ const hashInputs = context => {
       feePayoutCurrency, // convert from string ('ether') to boolean _isAdminFeeInWei
       payoutAddress,
       adminPayoutWallet,
-      adminAddresses,
+      admins,
     } = context.data;
 
 
     const itemsToHash = { // map of all values being hashed in PoolFactory smart contract
-      _maxAllocation: toWei(maxAllocation), //check if maxAllocation is a string, needs to be number
-      _adminPoolFee: percentToFractionArray( parseFloat(fee, 10)), // check if fee is string or number
+      _maxAllocation: toWei(maxAllocation.toString()), //check if maxAllocation is a string, needs to be number
+      _adminPoolFee: { type: 'uint256[]', value: percentToFractionArray( parseFloat(fee, 10))}, // check if fee is string or number
       _isAdminFeeInWei: (feePayoutCurrency === 'ether'),
-      _payoutWallet: payoutAddress,
+      // _payoutWallet: payoutAddress, // ***no longer required on pool creation
       _adminPayoutWallet: adminPayoutWallet , //** need _adminPayoutWallet,
-      _admins: adminAddresses
+      _admins: { type: 'address[]', value: admins.map(({address}) => address) }
     };
     //ToDo: write a test to make sure hashing on SmartContract and here always produces the same result
     context.data.inputsHash = soliditySha3(...Object.values(itemsToHash));
@@ -164,11 +164,10 @@ module.exports = {
     get: [],
     create: [
       createdAt,
-      setAddress('ownerAddress'),
-      sanitizeAddress('ownerAddress', {
-        required: true,
-        validate: true,
-      }),
+      // sanitizeAddress('ownerAddress', {
+      //   required: true,
+      //   validate: true,
+      // }),
       hashInputs,
       // isProjectAllowed(),
       // sanitizeHtml('description'),
