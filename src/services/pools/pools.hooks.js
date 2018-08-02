@@ -94,43 +94,44 @@ const schema = {
 const userWhitelistedAddresses = async context => {
   try {
     // console.log('context.params', context.params);
-    const { wallets } = await context.app.service('users').get(context.params.query.userWhitelisted)
-    const walletAddresses = wallets.map(({address})=> address);
+    const { wallets } = await context.app
+      .service('users')
+      .get(context.params.query.userWhitelisted);
+    const walletAddresses = wallets.map(({ address }) => address);
     const { whitelist } = context.result;
     context.result = intersection(walletAddresses, whitelist);
     return context;
-  } catch(err) {
+  } catch (err) {
     logger.error(err);
     throw new errors.BadRequest();
   }
-}
+};
 
 const hashInputs = context => {
-    const {
-      maxAllocation, // convert to wei ??
-      fee, // convert to fraction  (2d array of numbers)
-      feePayoutCurrency, // convert from string ('ether') to boolean _isAdminFeeInWei
-      payoutAddress,
-      adminPayoutWallet,
-      admins,
-    } = context.data;
+  const {
+    maxAllocation, // convert to wei ??
+    fee, // convert to fraction  (2d array of numbers)
+    feePayoutCurrency, // convert from string ('ether') to boolean _isAdminFeeInWei
+    payoutAddress,
+    adminPayoutAddress,
+    admins,
+  } = context.data;
 
-
-    const itemsToHash = { // map of all values being hashed in PoolFactory smart contract
-      _maxAllocation: toWei(maxAllocation.toString()), //check if maxAllocation is a string, needs to be number
-      _adminPoolFee: { type: 'uint256[]', value: percentToFractionArray( parseFloat(fee, 10))}, // check if fee is string or number
-      _isAdminFeeInWei: (feePayoutCurrency === 'ether'),
-      // _payoutWallet: payoutAddress, // ***no longer required on pool creation
-      _adminPayoutWallet: adminPayoutWallet , //** need _adminPayoutWallet,
-      _admins: { type: 'address[]', value: admins.map(({address}) => address) }
-    };
-    //ToDo: write a test to make sure hashing on SmartContract and here always produces the same result
-    context.data.inputsHash = soliditySha3(...Object.values(itemsToHash));
-    return context;
-}
+  const itemsToHash = {
+    // map of all values being hashed in PoolFactory smart contract
+    _maxAllocation: { t: 'uint256', v: toWei(maxAllocation.toString()) }, // check if maxAllocation is a string, needs to be number
+    _adminPoolFee: { t: 'uint256[]', v: percentToFractionArray(parseFloat(fee, 10)) }, // check if fee is string or number
+    _isAdminFeeInWei: { t: 'bool', v: feePayoutCurrency === 'ether' },
+    _payoutWallet: { t: 'address', v: payoutAddress },
+    _adminPayoutWallet: { t: 'address', v: adminPayoutAddress },
+    _admins: { t: 'address[]', v: admins.map(({ address }) => address) },
+  };
+  // ToDo: write a test to make sure hashing on SmartContract and here always produces the same result
+  context.data.inputsHash = soliditySha3(...Object.values(itemsToHash));
+  return context;
+};
 
 const addContributionCounts = async context => {
-
   if (context.params.provider === undefined) {
     console.log('provider', 'undefined');
   } else {
@@ -153,14 +154,13 @@ const addContributionCounts = async context => {
   //   logger.error(err);
   //   throw new errors.BadRequest();
   // }
-  return context
-}
-
+  return context;
+};
 
 module.exports = {
   before: {
     all: [],
-    find: [],// sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
+    find: [], // sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
     get: [],
     create: [
       createdAt,
@@ -189,8 +189,8 @@ module.exports = {
 
   after: {
     all: [commons.populate({ schema })],
-    find: [addContributionCounts], //commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
-    get: [commons.iff(hasQueryParam('userWhitelisted'), userWhitelistedAddresses )],
+    find: [addContributionCounts], // commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
+    get: [commons.iff(hasQueryParam('userWhitelisted'), userWhitelistedAddresses)],
     create: [],
     update: [],
     patch: [],
