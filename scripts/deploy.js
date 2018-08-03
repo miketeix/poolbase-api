@@ -1,9 +1,8 @@
 const Web3 = require('web3');
-const truffleContract = require('truffle-contract')
+const truffleContract = require('truffle-contract');
 const poolbaseFactoryArtifact = require('./contracts/PoolbaseFactory.json');
 const poolbaseEventEmitterArtifact = require('./contracts/PoolbaseEventEmitter.json');
 const poolArtifact = require('./contracts/Poolbase.json');
-
 
 const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 
@@ -22,19 +21,25 @@ const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 
 async function deploy() {
   const accounts = await web3.eth.getAccounts();
-  const from = accounts[0]
+  const from = accounts[0];
   console.log('from', from);
   const provider = web3.currentProvider;
   const { abi, bytecode } = poolArtifact;
 
-  const contract = new web3.eth.Contract(abi, '0x5bf8c6684f5580d82b73ad1fb1b299c2c32e25c5', { from, gasPrice: 20000000000 }); //, data: bytecode
+  const contract = new web3.eth.Contract(abi, '0x5bf8c6684f5580d82b73ad1fb1b299c2c32e25c5', {
+    from,
+    gasPrice: 20000000000,
+  }); // , data: bytecode
   // console.log('contract.options', contract.options);
   // console.log('contract.methods', contract.methods);
   console.log('contract.methods', contract.methods);
-  contract.methods.ROLE_ADMIN().call({from}).then((err, result) => {
-    console.log('err', err);
-    console.log('result', result);
-  });
+  contract.methods
+    .ROLE_ADMIN()
+    .call({ from })
+    .then((err, result) => {
+      console.log('err', err);
+      console.log('result', result);
+    });
 
   // const PoolFactory = await getContractInstance(poolbaseFactoryArtifact, provider, '0x9c33a9498886440f0a613c7cbcef07beb49d8e51' );
   // const EventEmitter = await getContractInstance(poolbaseEventEmitterArtifact, provider, '0xca5dd2dea153ae1a95ff030ee98b978ca11fa440' );

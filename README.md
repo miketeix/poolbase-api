@@ -7,13 +7,11 @@
 
 Make sure you have the a local blockchain running with the Poolbase contracts deployed onto it
 
-![Feathers Giveth](readme-header.png)
-
 > Real-time json cache server for blockchain data
 
 Note: Please use `develop` branch for contributing.
 
-Welcome to the server code for Giveth's [dapp](https://github.com/Giveth/giveth-dapp). The dapp uses [feathers](http://feathersjs.com) as a cache for its blockchain transactions. By utilizing websockets on both the blockchain and client devices, we can receive and push updates simultaneously to all users in real time.
+The dapp uses [feathers](http://feathersjs.com) as a cache for its blockchain transactions. By utilizing websockets on both the blockchain and client devices, we can receive and push updates simultaneously to all users in real time.
 
 ## Table of content
 
@@ -32,18 +30,18 @@ Welcome to the server code for Giveth's [dapp](https://github.com/Giveth/giveth-
 ### Install
 
 1. Click **Star** on this repo near the top-right corner of this web page (if you want to).
-2. Join our [slack](http://slack.giveth.io) if you haven't already.
-3. Fork this repo by clicking **Fork** button in top-right corner of this web page. Continue to follow instruction steps from your own feathers-giveth repo.
-4. The rest of these steps must be done from your machine's command line. Clone your own "feathers-giveth" repo. Copy the link from the "Clone or download" button near the top right of this repo's home page.
+2. Join our [slack](http://slack.io) if you haven't already.
+3. Fork this repo by clicking **Fork** button in top-right corner of this web page. Continue to follow instruction steps from your own feathers repo.
+4. The rest of these steps must be done from your machine's command line. Clone your own "feathers" repo. Copy the link from the "Clone or download" button near the top right of this repo's home page.
    ```
    git clone {paste your own repo link here}
    ```
-5. Change directories to feathers-giveth:
+5. Change directories to feathers:
    ```
-   cd feathers-giveth
+   cd feathers
    ```
 6. Make sure you have [NodeJS](https://nodejs.org/) (v8.4.0 or higher), [yarn](https://www.yarnpkg.com/) (v0.27.5 or higher), and npm (5.4.1 or higher) installed.
-7. Install dependencies from within feathers-giveth directory:
+7. Install dependencies from within feathers directory:
    ```
    npm install
    ```
@@ -60,7 +58,7 @@ The configuration param `blockchain.nodeUrl` is used to establish a connection. 
    yarn testrpc
    ```
 
-2. Since TestRPC is now running, open a new terminal window and navigate to the same feathers-giveth directory.
+2. Since TestRPC is now running, open a new terminal window and navigate to the same feathers directory.
 
 3. The TestRPC instance simulates a new blockchain. So we must deploy any contracts we intend to call.
 
@@ -88,7 +86,7 @@ Video tutorial walkthrough here: https://tinyurl.com/y9lx6jrl
 
 ## Scripts
 
-The `feathers-giveth/scripts` directory contains a few scripts to help development.
+The `feathers/scripts` directory contains a few scripts to help development.
 
 `deploy.js` - deploys a new vault & liquidPledging contract
 
@@ -126,4 +124,4 @@ If the server is using default configurations, you can see data for any of these
 
 For more info on how to work with feathers checkout out their docs on [service methods](https://docs.feathersjs.com/api/databases/common.html#service-methods), [service events](https://docs.feathersjs.com/api/events.html#service-events), and [database querying](https://docs.feathersjs.com/api/databases/querying.html).
 
-Also feel free to reach out to us on [slack](http://slack.giveth.io) for any help or to share ideas.
+Also feel free to reach out to us on [slack](http://slack.io) for any help or to share ideas.
