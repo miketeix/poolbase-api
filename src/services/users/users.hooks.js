@@ -3,6 +3,8 @@ import { restrictToOwner } from 'feathers-authentication-hooks';
 import local from '@feathersjs/authentication-local';
 import { toChecksumAddress } from 'web3-utils';
 
+import isOwner from './hooks/isOwner';
+
 import notifyOfChange from '../../hooks/notifyOfChange';
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
@@ -53,10 +55,17 @@ module.exports = {
   },
 
   after: {
-    all: [commons.when(hook => hook.params.provider)], //commons.discard('_id')
-    find: [],
-    get: [],
-    create: [local.hooks.protect('password')],
+    all: [
+      commons.when(hook => hook.params.provider),
+      local.hooks.protect('password')
+    ], //commons.discard('_id')
+    find: [
+      commons.iff( commons.isNot(isOwner), commons.discard('email')),
+    ],
+    get: [
+      commons.iff( commons.isNot(isOwner), commons.discard('email')),
+    ],
+    create: [],
     update: [notifyOfChange(...notifyParents)],
     patch: [notifyOfChange(...notifyParents)],
     remove: [notifyOfChange(...notifyParents)],
