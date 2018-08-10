@@ -21,26 +21,26 @@ class Contributions {
   }
 
   contributionMade(event) {
-    if (event.event !== this.EVENTS.CONTRIBUTION_MADE)
-      throw new Error(`contributions.contributionMade only handles ${this.EVENTS.CONTRIBUTION_MADE} events`);
+    if (event.event !== Contributions.EVENTS.CONTRIBUTION_MADE)
+      throw new Error(`contributions.contributionMade only handles ${Contributions.EVENTS.CONTRIBUTION_MADE} events`);
 
-    const { poolContractAddress, investor, contribution } = event.returnValues;
+    const { poolContractAddress, msgSender, contribution } = event.returnValues;
     const query = {
       poolAddress: poolContractAddress,
-      ownerAddress: investor,
+      ownerAddress: msgSender,
       status: 'pending_confirmation', // ToDo: after updating to mongo, will place all statuses in enum
       amount: fromWei(contribution)
     };
     this.updateContribution(query, 'confirmed', event);
   }
   async tokenClaimed(event) {
-    if (event.event !== this.EVENTS.TOKEN_CLAIMED)
-      throw new Error(`contributions.tokenClaimed only handles ${this.EVENTS.TOKEN_CLAIMED} events`);
+    if (event.event !== Contribution.EVENTS.TOKEN_CLAIMED)
+      throw new Error(`contributions.tokenClaimed only handles ${Contribution.EVENTS.TOKEN_CLAIMED} events`);
 
-    const { poolContractAddress, beneficiary, amount, token } = event.returnValues;
+    const { poolContractAddress, msgSender, amount, token } = event.returnValues;
     const query = {
       poolAddress: poolContractAddress,
-      ownerAddress: beneficiary,
+      ownerAddress: msgSender,
       status: 'pending_claim', // ToDo: after updating to mongo, will place all statuses in enum
     };
 
@@ -57,14 +57,13 @@ class Contributions {
           poolStatus: contribution.status,//borrowing the pool or contribution status
           txHash: event.transactionHash,
           poolAddress: poolContractAddress,
-          // eventName ??
-          // sender: event.returnValues.sender, // ToDo: see if Gus will pass along sender
+          msgSender: event.returnValues.msgSender,
+          eventName: event.event,
           data: { ...event.returnValues }
       });
 
-      // check if previous pool status isn't what it's supposed to be
+      // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
-      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
 
       let amountClaimed;
       if (contribution.tokenAmountClaimed) {
@@ -73,14 +72,31 @@ class Contributions {
         amountClaimed = amount;
       }
 
-      return await this.contributions.patch(contribution._id, {
-        status: 'claim_made',
+      let newStatus = 'claim_made';
+      let updateStatusChangeQueue = {};
+      logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
+      if (contribution.statusChangeQueue && !!contribution.statusChangeQueue.length) {
+        newStatus = contribution.statusChangeQueue.shift(); // mutates array
+        updateStatusChangeQueue = {
+          statusChangeQueue: contribution.statusChangeQueue
+        }
+        logger.info(`Updating status of contribution ${contribution._id} with status from statusChangeQueue from 'claim_made' to ${newStatus}`);
+
+      }
+
+      await this.contributions.patch(contribution._id, {
+        status: newStatus,
         tokenAmountClaimed: amountClaimed,
         $push: {
           transactions: transaction.txHash
         },
-        txHash: event.transactionHash, //ToDo: create TX Obj and add to array
+        $inc: {
+          tokenClaimCount: 1
+        },
+        $unset: { pendingTx: true },
+        ...updateStatusChangeQueue
       });
+
     } catch(err) {
       logger.error(err);
     };
@@ -90,13 +106,13 @@ class Contributions {
 
   }
   refunded(event) {
-    if (event.event !== this.EVENTS.REFUNDED)
-      throw new Error(`contributions.refunded only handles ${this.EVENTS.REFUNDED} events`);
+    if (event.event !== Contributions.EVENTS.REFUNDED)
+      throw new Error(`contributions.refunded only handles ${Contributions.EVENTS.REFUNDED} events`);
 
-    const { poolContractAddress, beneficiary, weiAmount } = event.returnValues;
+    const { poolContractAddress, msgSender, weiAmount } = event.returnValues;
     const query = {
       poolAddress: poolContractAddress,
-      ownerAddress: beneficiary,
+      ownerAddress: msgSender,
       status: 'pending_refund', // ToDo: after updating to mongo, will place all statuses in enum
       amount: weiAmount //ToDo: verify if I need to convert from wei
     };
@@ -120,8 +136,8 @@ class Contributions {
           poolStatus: query.status,//borrowing the pool or contribution status
           txHash: event.transactionHash,
           poolAddress: query.poolAddress,
-          // eventName ??
-          // sender: event.returnValues.sender, // ToDo: see if Gus will pass along sender
+          msgSender: event.returnValues.msgSender,
+          eventName: event.event,
           data: { ...event.returnValues }
       });
 
@@ -133,7 +149,8 @@ class Contributions {
         status: newStatus,
         $push: {
           transactions: transaction.txHash
-        }
+        },
+        $unset: { pendingTx: true }
       });
     } catch(err) {
       logger.error(err);
