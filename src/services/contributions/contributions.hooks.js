@@ -1,12 +1,16 @@
 /* eslint-disable no-unused-vars */
 import errors from 'feathers-errors';
 import commons from 'feathers-hooks-common';
+import { restrictToOwner } from 'feathers-authentication-hooks';
 
 import hasQueryParam from '../../hooks/hasQueryParam';
 import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
-import setOwnerId from '../../hooks/setOwnerId';
-import addPendingTxData from './hooks/addPendingTxData';
+import setUserId from '../../hooks/setUserId';
+import setStatus from '../../hooks/setStatus';
+import { addLastStatus } from '../../hooks/addLastStatus';
+import addPendingTx from './hooks/addPendingTx';
+import checkPoolWhitelist from './hooks/checkPoolWhitelist';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
 //
@@ -34,8 +38,6 @@ const schema = {
   ],
 };
 
-// restrict(),
-
 module.exports = {
   before: {
     all: [commons.paramsFromClient('schema')],
@@ -45,26 +47,24 @@ module.exports = {
     ],
     get: [],
     create: [
-      /*
-        need hook that checks if address has already made contribution to this pool
-        - would send it back into pending_contribution - or create new Contribution?
-      */
-      // addStatus, // pending_contribution
+      checkPoolWhitelist,
+      setStatus('pending_confirmation'),
+      // setPoolAddress
       createdAt,
-      setOwnerId('ownerId'),
-      addPendingTxData
+      setUserId('owner'),
+      addPendingTx
     ],
-    update: [ commons.disallow()],
+    update: [commons.disallow()],
     // update: [ sanitizeAddress('contributorAddress', { validate: true }), updatedAt],
     patch: [
-      addPendingTxData
+      // restrict,
+      // sanitizeAddress('contributorAddress', { validate: true }),
+      restrictToOwner({ idField: '_id', ownerField: 'owner'}),
+      addPendingTx,
+      commons.iff(({ data: { status }}) => !!status, commons.stashBefore(), addLastStatus),
+      updatedAt,
     ],
-    // patch: [
-    //   restrict(),
-    //   sanitizeAddress('contributorAddress', { validate: true }),
-    //   stashDonationIfPending(),
-    //   updatedAt,
-    // ],
+
     remove: [commons.disallow()],
   },
 
