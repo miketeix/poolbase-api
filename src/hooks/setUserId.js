@@ -11,7 +11,6 @@ export default field => context => {
 
     return context;
   }
-  console.log('heeere');
   setByDot(context.data, field, context.params.user._id);
   return context;
 };
