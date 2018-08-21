@@ -1,14 +1,18 @@
 import Web3 from 'web3';
+import logger from 'winston';
 import errors from 'feathers-errors';
 import { setByDot, checkContext } from 'feathers-hooks-common';
 import { soliditySha3, hexToNumber, toWei, toBN } from 'web3-utils';
 
+import { percentToFractionArray } from '../../../utils/fractions';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
 
 import poolbaseAbi from '../../../blockchain/contracts/PoolbaseAbi.json';
 
 export default async context => {
   checkContext(context, 'before', ['patch']);
+
+  if (typeof context.params.provider === 'undefined') return context // allow patch from internal call
 
   const { nodeUrl } = context.app.get('blockchain');
   const web3 = new Web3(nodeUrl);
@@ -18,39 +22,76 @@ export default async context => {
 
     const {
       status,
-      amount,
+      maxAllocation,
+      fee,
+      adminPayoutAddress,
       ...rest
     } = context.data;
+
+    // if (!status) return context;
 
     let poolContractFunctionName;
     let poolContractFunctionArgs;
 
-    switch (status) {
-      case 'pending_close_pool':
-        const { payoutAddress, payoutTxData } = rest;
-        poolContractFunctionArgs = [ payoutAddress, payoutTxData ];
-        poolContractFunctionName = 'adminClosesPool';
-        break;
-      case 'pending_token_batch':
-        const { tokenAddress } = rest;
-        poolContractFunctionArgs = [ tokenAddress ];
-        poolContractFunctionName = 'adminSetsBatch';
-        break;
-      case 'pending_enable_refunds':
-        poolContractFunctionArgs = [];
-        poolContractFunctionName = 'adminSetsBatch';
-        break;
-      default:
-        return context;
-        break;
+    if (status) {
+      switch (status) {
+        case 'pending_close_pool':
+            let { payoutAddress, payoutTxData } = rest;
+
+            // logic to handle no payoutAddress - currently in protectPayoutAddress hook
+
+            payoutAddress = payoutAddress || context.params.before.payoutAddress;
+            // const { payoutAddress, payoutTxData } = context.params.before;
+
+            if (!payoutAddress && !payoutTxData) {
+              logger.error(`Missing args to status change ${status}`);
+              return new errors.BadRequest( `Missing args for status change ${status}`);
+            }
+            poolContractFunctionArgs = [ payoutAddress, payoutTxData ];
+            poolContractFunctionName = 'adminClosesPool';
+            break;
+        case 'pending_token_batch':
+          const { tokenAddress } = rest;
+
+          //ToDo: check pool state must be in  closed or tokenpayout state otherwise transaction will fail
+
+          if (!tokenAddress) {
+            logger.error(`Missing args to status change ${status}`);
+            return new errors.BadRequest( `Missing args for status change ${status}`);
+          }
+          poolContractFunctionArgs = [ tokenAddress ];
+          poolContractFunctionName = 'adminSetsBatch';
+          break;
+        case 'pending_enable_refunds':
+          poolContractFunctionArgs = [];
+          poolContractFunctionName = 'enableRefunds';
+          break;
+        default:
+          return context;
+          break;
+      }
+    } else if (maxAllocation) {
+      poolContractFunctionArgs = [ toWei(toBN(maxAllocation)) ];
+      poolContractFunctionName = 'changeMaxAllocation';
+    } else if (fee) {
+      poolContractFunctionArgs = [ percentToFractionArray(parseFloat(fee, 10)) ];
+      poolContractFunctionName = 'setAdminPoolFee';
+    } else if (adminPayoutAddress) {
+      poolContractFunctionArgs = [ adminPayoutAddress ];
+      poolContractFunctionName = 'setAdminPayoutWallet';
+    } else {
+      return context;
     }
 
-    const { address: poolAddress } = await context.app.service('pools').get(poolId);
+    const { contractAddress: poolAddress } = context.params.before;
 
     const functionAbi = getFunctionAbiByName(poolbaseAbi, poolContractFunctionName);
-    const gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, functionName, poolContractFunctionArgs);
-    const data = web3.eth.abi.encodeFunctionCall(functionAbi, poolContractFunctionArgs);
 
+    let gasLimit;
+    gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, poolContractFunctionName, poolContractFunctionArgs);
+
+    const data = web3.eth.abi.encodeFunctionCall(functionAbi, poolContractFunctionArgs);
+    // ToDo: add gasPrice
     const pendingTx = {
       toAddress: poolAddress,
       amount: 0,
