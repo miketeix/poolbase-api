@@ -16,6 +16,7 @@ import { toChecksumAddress } from 'web3-utils';
 export default (fieldNames, opts = { required: false, validate: false }) => context => {
   const { required, validate } = opts;
 
+
   commons.checkContext(context, 'before', ['find', 'create', 'update', 'patch', 'remove']);
 
   if (!Array.isArray(fieldNames)) fieldNames = [fieldNames];
@@ -47,12 +48,28 @@ export default (fieldNames, opts = { required: false, validate: false }) => cont
 
   const convertItem = item => {
     fieldNames.forEach(fieldName => {
-      if (required && !item[fieldName])
+      if (required && !item[fieldName]) //commons.getByDot
         throw new errors.BadRequest(`"${fieldName} is a required field`);
 
-      if (item[fieldName]) {
+      if (item[fieldName]) { // commons.getByDot
         try {
+          console.log('fieldName', fieldName);
+          console.log('item', item);
+          console.log('item[fieldName]', item[fieldName]);
+          commons.getByDot(item, fieldName) // 'ownerAddress',  whitelist [{ address }]
+
+          [
+            {
+              fieldName: 'whitelist',
+              objectArrayKey: 'address'
+            }
+          ]
+
+           // see if array = if array of values - cycle through values
+           //                 if array of objects - cycle through array, and grab value from keys
+           // then perform toChecksumAddress
           item[fieldName] = toChecksumAddress(item[fieldName]);
+          console.log('item[fieldName]', item[fieldName]);
         } catch (e) {
           if (validate)
             throw new errors.BadRequest(`invalid address provided for "${fieldName}"`, item);
