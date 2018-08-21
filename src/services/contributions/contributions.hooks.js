@@ -49,7 +49,6 @@ module.exports = {
     create: [
       checkPoolWhitelist,
       setStatus('pending_confirmation'),
-      // setPoolAddress
       createdAt,
       setUserId('owner'),
       addPendingTx

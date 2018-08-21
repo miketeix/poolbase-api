@@ -1,5 +1,5 @@
 import logger from 'winston';
-
+import { fractionArrayToPercent } from '../utils/fractions';
 /**
  * class to keep feathers cache in sync with pools contract
  */
@@ -12,6 +12,9 @@ class Pools {
       REFUNDS_ENABLED: 'RefundsEnabled',
       PAUSE: 'Pause',
       UNPAUSE: 'Unpause',
+      ADMIN_PAYOUT_WALLET_SET: 'AdminPayoutWalletSet',
+      ADMIN_POOL_FEE_SET: 'AdminPoolFeeSet',
+      MAX_ALLOCATION_CHANGED: 'MaxAllocationChanged',
     };
   }
 
@@ -39,6 +42,11 @@ class Pools {
         },
       });
 
+      if (!pool) {
+        logger.warn(`No pool found for contract instantiation event from message sender ${msgSender} and pool contract ${instantiation}`);
+        return;
+      }
+
       const transaction = await this.transactions.create({
         poolStatus: 'pending_deployment',
         txHash: transactionHash,
@@ -47,7 +55,6 @@ class Pools {
         eventName,
         data: {},
       });
-
       return this.pools.patch(pool._id, {
         status: 'active',
         contractAddress: instantiation,
@@ -166,6 +173,28 @@ class Pools {
 
   }
 
+  async adminPayoutWalletSet(event) {
+    if (event.event !== Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET)
+      throw new Error(`pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`);
+
+    await this.updatePool(null, event, { adminPayoutAddress: event.returnValues.adminPayoutWallet });
+  }
+
+  async adminPoolFeeSet(event) {
+    if (event.event !== Pools.EVENTS.ADMIN_POOL_FEE_SET)
+      throw new Error(`pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`);
+
+    await this.updatePool(null, event, { fee: fractionArrayToPercent(event.returnValues.adminPoolFee) });
+  }
+
+  async maxAllocationChanged(event) {
+    if (event.event !== Pools.EVENTS.MAX_ALLOCATION_CHANGED)
+      throw new Error(`pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`);
+
+    const {fromWei, toBN} = this.web3.utils;
+    await this.updatePool(null, event, { fee: fromWei(toBN(event.returnValues.maxAllocation)) });
+  }
+
   static async updatePool(newStatus, event, additionalUpdates) {
     try {
       const { data: [pool] } = await this.pools.find({
@@ -189,18 +218,20 @@ class Pools {
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      newStatus
-        ? logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`)
-        : logger.info(
-            `Reverting status of pool ${contractAddress} from ${pool.status} to ${pool.lastStatus}`,
-          );
+      newStatus && logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`)
 
-      return await this.pools.patch(pool._id, {
-        status: newStatus,
+      const payload = {
         $push: { transactions: transaction.txHash },
         $unset: { pendingTx: true},
         ...additionalUpdates
-      });
+      }
+
+      if (newStatus) {
+        payload.status = newStatus
+      }
+
+      return await this.pools.patch(pool._id, payload);
+
     } catch (err) {
       logger.error(err);
     }

@@ -10,6 +10,9 @@ const { EVENTS: {
   REFUNDS_ENABLED,
   PAUSE,
   UNPAUSE,
+  ADMIN_PAYOUT_WALLET_SET,
+  ADMIN_POOL_FEE_SET,
+  MAX_ALLOCATION_CHANGED,
 }} = Pools;
 
 const { EVENTS: {
@@ -33,7 +36,7 @@ export default class {
 
     this.pools = new Pools(app, this.poolbase);
     this.contributions = new Contributions(app, this.poolbase);
-    this.model = createModel(app);// for storing blocknumber in db
+    this.model = createModel(app); // for storing blocknumber in db
 
     if (opts.startingBlock && opts.startingBlock !== 0) {
       defaultConfig.lastBlock = opts.startingBlock - 1;
@@ -180,6 +183,18 @@ export default class {
 
       case UNPAUSE:
       this.pools.unpaused(event);
+      break;
+
+      case ADMIN_PAYOUT_WALLET_SET:
+      this.pools.adminPayoutWalletSet(event);
+      break;
+
+      case ADMIN_POOL_FEE_SET:
+      this.pools.adminPoolFeeSet(event);
+      break;
+
+      case MAX_ALLOCATION_CHANGED:
+      this.pools.maxAllocationChanged(event);
       break;
 
       //      ** Contribution Events **
