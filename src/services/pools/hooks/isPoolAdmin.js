@@ -7,9 +7,9 @@ export default async (context) => {
   commons.checkContext(context, null, ['get', 'patch'], 'isPoolAdmin');
 
   if (!context.params.user) return false;
-
+  let pool;
   try {
-    const pool = await context.service.get(context.id);
+    pool = await context.service.get(context.id);
   } catch(err) {
     logger.error(err)
     return errors.GeneralError('handlePauseUnpause', err);
