@@ -13,3 +13,13 @@ export const percentToFractionArray = (percentNumber) => {
   const denominator = Math.pow(100, decimalPlaces);
   return [ numerator, denominator ];
 }
+
+export const fractionArrayToPercent = (fractionArray) => {
+  if ( !Array.isArray(fractionArray) || fractionArray.length !== 2)
+    throw new Error(`fractionArrayToPercent only handles arrays of size 2, value: ${fractionArray} is type: ${typeof fractionArray}`);
+  if ( typeof fractionArray[0] !== 'number' || typeof fractionArray[1] !== 'number')
+    throw new Error(`fractionArrayToPercent only handles arrays of size 2 composed of numbers, value: ${fractionArray} is composed of types: [${typeof fractionArray[0]}, ${typeof fractionArray[1]}]`);
+
+  const percent = (fractionArray[0]/fractionArray[1])*100;
+  return percent;
+}
