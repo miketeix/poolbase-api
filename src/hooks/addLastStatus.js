@@ -1,7 +1,10 @@
 import { setByDot } from 'feathers-hooks-common';
 
 export default context => {
-  const { status: lastStatus } = context.params.before;
-  setByDot(context.data, 'lastStatus', lastStatus);
+  if (context.data && !!context.data.status) {
+    const { status: lastStatus } = context.params.before;
+    console.log('lastStatus', lastStatus);
+    setByDot(context.data, 'lastStatus', lastStatus);
+  }
   return context;
 };
