@@ -1,5 +1,6 @@
 import Web3 from 'web3';
 import errors from 'feathers-errors';
+import logger from 'winston';
 import { setByDot } from 'feathers-hooks-common';
 import { soliditySha3, hexToNumber, toWei, toBN } from 'web3-utils';
 import { percentToFractionArray } from '../../../utils/fractions';
@@ -30,6 +31,8 @@ export default async context => {
       _eventEmitterContract: eventEmitterAddress,
       _admins: admins.map(({ address }) => address),
     };
+
+    console.log('argMap', argMap);
 
     const args = Object.values(argMap);
 

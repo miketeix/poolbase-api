@@ -5,18 +5,22 @@ import intersection from 'lodash.intersection';
 import { restrictToOwner } from 'feathers-authentication-hooks';
 
 import sanitizeAddress from '../../hooks/sanitizeAddress';
+import sanitizePayloadAddresses from '../../hooks/sanitizePayloadAddresses';
+import sanitizeQueryAddresses from '../../hooks/sanitizeQueryAddresses';
 import setAddress from '../../hooks/setAddress';
 import setStatus from '../../hooks/setStatus';
 import setUserId from '../../hooks/setUserId';
 import sanitizeHtml from '../../hooks/sanitizeHtml';
 import hasQueryParam from '../../hooks/hasQueryParam';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
-import { addLastStatus } from '../../hooks/addLastStatus';
+import addLastStatus from '../../hooks/addLastStatus';
+import protectFromUpdate from '../../hooks/protectFromUpdate';
 
 import addPendingDeployTx from './hooks/addPendingDeployTx';
 import addPendingTx from './hooks/addPendingTx';
 import addInputsHash from './hooks/addInputsHash';
 import isPoolAdmin from './hooks/isPoolAdmin';
+import protectPayoutAddress from './hooks/protectPayoutAddress';
 import updateUserWalletList from './hooks/updateUserWalletList';
 import handlePauseUnpause from './hooks/handlePauseUnpause';
 import revertToLastStatus from './hooks/revertToLastStatus';
@@ -73,8 +77,12 @@ const schema = {
 
 module.exports = {
   before: {
-    all: [],
-    find: [], // sanitizeAddress('ownerAddress')], //ToDo: Add restriction only Owner can fetch Pools
+    all: [context=> {
+      console.log('context.params.query', context.params.query);
+    }],
+    find: [
+      sanitizeQueryAddresses
+    ],
     get: [],
     create: [
       createdAt,
@@ -82,10 +90,13 @@ module.exports = {
       setUserId('owner'),
       addInputsHash,
       addPendingDeployTx,
-      // sanitizeAddress('ownerAddress', {
-      //   required: true,
-      //   validate: true,
-      // }),
+      sanitizePayloadAddresses([
+        { fieldName: 'ownerAddress'},
+        { fieldName: 'payoutAddress'},
+        { fieldName: 'adminPayoutAddress'},
+        { fieldName: 'whitelist', objectArrayKey: 'address'},
+        { fieldName: 'admins', objectArrayKey: 'address'},
+      ]),
     ],
     update: [ // for pool edit page
       commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner'})),
@@ -95,13 +106,37 @@ module.exports = {
       updatedAt,
     ],
     patch: [
+      // context => {
+      //   console.log('context.params.user', context.params.user)
+      //   return context
+      // }
+      sanitizePayloadAddresses([
+        { fieldName: 'payoutAddress'},
+        { fieldName: 'adminPayoutAddress'},
+        { fieldName: 'tokenAddress'},
+        { fieldName: 'whitelist', objectArrayKey: 'address'},
+        { fieldName: 'admins', objectArrayKey: 'address'},
+      ]),
+      // sanitizeQueryAddresses
       commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner'})),
       commons.stashBefore(),
-      commons.iff((({data: { status }}) => (status === 'paused')), revertToLastStatus),
+      commons.iff((({data: { status }}) => (status === 'unpaused')),
+        revertToLastStatus),
       addLastStatus,
-      sanitizeAddress('ownerAddress', { validate: true }),
-      sanitizeHtml('description'),
       addPendingTx,
+      protectFromUpdate([
+        'ownerAddress',
+        'owner',
+        'maxAllocation',
+        'feeCurrency',
+        'admins',
+        'payoutAddress',
+        'lockPayoutAddress',
+        'payoutAddress'
+        ]),
+      protectPayoutAddress,
+
+      // sanitizeHtml('description'),
       updatedAt,
     ],
     remove: [commons.disallow()],
@@ -109,19 +144,21 @@ module.exports = {
 
   after: {
     all: [commons.populate({ schema })],
-    find: [addContributionCounts], // commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
+    find: [
+      // addContributionCounts
+    ], // commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
     get: [
-      commons.iff(hasQueryParam('userWhitelisted'), getUserWhitelistedAddresses),
+      // commons.iff(hasQueryParam('userWhitelisted'), getUserWhitelistedAddresses),
       commons.unless(isPoolAdmin, commons.discard('pendingTx')),
       commons.unless(isPoolAdmin, commons.discard('whitelist')),
-      addContributionCounts
+      // addContributionCounts
     ],
     create: [
       updateUserWalletList
     ],
     update: [],
     patch: [
-      handlePauseUnpause
+      // handlePauseUnpause
     ],
     remove: [],
   },
