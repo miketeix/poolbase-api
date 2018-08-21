@@ -144,6 +144,15 @@
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
     "name": "isAdminFeeInWei",
@@ -211,6 +220,20 @@
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -392,6 +415,20 @@
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
     "name": "token",
@@ -404,53 +441,6 @@
     "payable": false,
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "name": "_superBouncers",
-        "type": "address[]"
-      },
-      {
-        "name": "_maxAllocation",
-        "type": "uint256"
-      },
-      {
-        "name": "_adminPoolFee",
-        "type": "uint256[2]"
-      },
-      {
-        "name": "_poolbaseFee",
-        "type": "uint256[2]"
-      },
-      {
-        "name": "_isAdminFeeInWei",
-        "type": "bool"
-      },
-      {
-        "name": "_payoutWallet",
-        "type": "address"
-      },
-      {
-        "name": "_adminPayoutWallet",
-        "type": "address"
-      },
-      {
-        "name": "_poolbasePayoutWallet",
-        "type": "address"
-      },
-      {
-        "name": "_eventEmitterContract",
-        "type": "address"
-      },
-      {
-        "name": "_admins",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "constructor"
   },
   {
     "payable": true,
@@ -492,6 +482,85 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "previousOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipRenounced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_bouncers",
+        "type": "address[]"
+      },
+      {
+        "name": "_maxAllocation",
+        "type": "uint256"
+      },
+      {
+        "name": "_adminPoolFee",
+        "type": "uint256[2]"
+      },
+      {
+        "name": "_poolbaseFee",
+        "type": "uint256[2]"
+      },
+      {
+        "name": "_isAdminFeeInWei",
+        "type": "bool"
+      },
+      {
+        "name": "_payoutWallet",
+        "type": "address"
+      },
+      {
+        "name": "_adminPayoutWallet",
+        "type": "address"
+      },
+      {
+        "name": "_poolbasePayoutWallet",
+        "type": "address"
+      },
+      {
+        "name": "_eventEmitter",
+        "type": "address"
+      },
+      {
+        "name": "_admins",
+        "type": "address[]"
+      }
+    ],
+    "name": "init",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": false,
     "inputs": [],
     "name": "pause",
@@ -529,8 +598,13 @@
   },
   {
     "constant": false,
-    "inputs": [],
-    "name": "emergencyAcceptAllPayment",
+    "inputs": [
+      {
+        "name": "willAccept",
+        "type": "bool"
+      }
+    ],
+    "name": "emergencyAcceptAllPayments",
     "outputs": [],
     "payable": true,
     "stateMutability": "payable",
@@ -598,7 +672,7 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_poolbasePayoutWallet",
+        "name": "_newPoolbasePayoutWallet",
         "type": "address"
       }
     ],
@@ -612,7 +686,7 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_adminPayoutWallet",
+        "name": "_newAdminPayoutWallet",
         "type": "address"
       }
     ],
@@ -626,7 +700,7 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_adminPoolFee",
+        "name": "_newAdminPoolFee",
         "type": "uint256[2]"
       }
     ],
@@ -640,7 +714,7 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_poolbaseFee",
+        "name": "_newPoolbaseFee",
         "type": "uint256[2]"
       }
     ],
@@ -654,7 +728,7 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_maxAllocation",
+        "name": "_newMaxAllocation",
         "type": "uint256"
       }
     ],
@@ -731,7 +805,16 @@
   },
   {
     "constant": false,
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "_payoutWallet",
+        "type": "address"
+      },
+      {
+        "name": "txData",
+        "type": "bytes32"
+      }
+    ],
     "name": "adminClosesPool",
     "outputs": [],
     "payable": false,

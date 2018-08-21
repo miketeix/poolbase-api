@@ -156,6 +156,72 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "msgSender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "adminPayoutWallet",
+        "type": "address"
+      }
+    ],
+    "name": "AdminPayoutWalletSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "msgSender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "adminPoolFee",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "AdminPoolFeeSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "msgSender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "maxAllocation",
+        "type": "uint256"
+      }
+    ],
+    "name": "MaxAllocationChanged",
+    "type": "event"
+  },
+  {
     "constant": false,
     "inputs": [
       {
@@ -310,6 +376,72 @@
       }
     ],
     "name": "logTokenClaimedEvent",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "name": "_msgSender",
+        "type": "address"
+      },
+      {
+        "name": "_adminPayoutWallet",
+        "type": "address"
+      }
+    ],
+    "name": "logSetAdminPayoutWalletEvent",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "name": "_msgSender",
+        "type": "address"
+      },
+      {
+        "name": "_adminPoolFee",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "logSetAdminPoolFeeEvent",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "poolContractAddress",
+        "type": "address"
+      },
+      {
+        "name": "_msgSender",
+        "type": "address"
+      },
+      {
+        "name": "maxAllocation",
+        "type": "uint256"
+      }
+    ],
+    "name": "logChangeMaxAllocationEvent",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",

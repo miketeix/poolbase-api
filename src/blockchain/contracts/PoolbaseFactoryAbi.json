@@ -87,11 +87,11 @@
     "constant": true,
     "inputs": [
       {
-        "name": "creator",
-        "type": "address"
+        "name": "",
+        "type": "uint256"
       }
     ],
-    "name": "getInstantiationCount",
+    "name": "poolbaseFee",
     "outputs": [
       {
         "name": "",
@@ -104,17 +104,12 @@
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolbaseFee",
+    "inputs": [],
+    "name": "libraryAddress",
     "outputs": [
       {
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "payable": false,
@@ -150,6 +145,56 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "name": "_libraryAddress",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "msgSender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "instantiation",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "hashMessage",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ContractInstantiation",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "target",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "clone",
+        "type": "address"
+      }
+    ],
+    "name": "CloneCreated",
+    "type": "event"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -179,40 +224,64 @@
     "type": "event"
   },
   {
-    "anonymous": false,
+    "constant": false,
     "inputs": [
       {
-        "indexed": false,
-        "name": "msgSender",
+        "name": "_libraryAddress",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "instantiation",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "hashMessage",
-        "type": "bytes32"
       }
     ],
-    "name": "ContractInstantiation",
-    "type": "event"
+    "name": "setLibraryAddress",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "constant": false,
     "inputs": [
       {
-        "name": "_superBouncers1",
-        "type": "address"
-      },
-      {
-        "name": "_superBouncers2",
-        "type": "address"
+        "name": "_superBouncers",
+        "type": "address[2]"
       }
     ],
     "name": "setSuperBouncers",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_superBouncer",
+        "type": "address"
+      },
+      {
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "addBouncersToAPool",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_superBouncer",
+        "type": "address"
+      },
+      {
+        "name": "poolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "removeBouncersToAPool",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -297,6 +366,25 @@
     "type": "function"
   },
   {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "creator",
+        "type": "address"
+      }
+    ],
+    "name": "getInstantiationCount",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "constant": false,
     "inputs": [
       {
@@ -329,12 +417,7 @@
       }
     ],
     "name": "create",
-    "outputs": [
-      {
-        "name": "pool",
-        "type": "address"
-      }
-    ],
+    "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
