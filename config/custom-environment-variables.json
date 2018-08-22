@@ -1,0 +1,12 @@
+{
+  "blockchain": {
+    "keystorePassphrase": "KEYSTORE_PASSPHRASE"
+  },
+  "aws" : {
+    "accessKey": "S3_KEY",
+    "secretAccessKey": "S3_SECRET"
+  },
+  "authentication": {
+    "secret": "FEATHERS_SECRET"
+  }
+}

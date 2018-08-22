@@ -1,14 +1,25 @@
 import Web3 from 'web3';
 import errors from 'feathers-errors';
 import { checkContext, setByDot } from 'feathers-hooks-common';
+import AWS from 'aws-sdk';
 import { soliditySha3, hexToNumber, toWei, toBN } from 'web3-utils';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
 
 import poolbaseAbi from '../../../blockchain/contracts/PoolbaseAbi.json';
 
+
+
 export default async context => {
   checkContext(context, 'before', ['patch', 'create']);
-  const { poolbaseSignerAddress, nodeUrl } = context.app.get('blockchain');
+  const { poolbaseSignerAddress, nodeUrl, keystorePassphrase } = context.app.get('blockchain');
+  const { bucketName, secretsPath, accessKey, secretAccessKey } = context.app.get('aws');
+
+  const s3 = new AWS.S3({
+    region: 'eu-central-1',
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey
+  });
+
   const web3 = new Web3(nodeUrl);
 
   const { status, ownerAddress, pool: poolId, amount: contributionAmount } = context.data; // grab poolId or poolAddress
@@ -36,12 +47,21 @@ export default async context => {
   console.log('ownerAddress', ownerAddress);
   console.log('contributionAmount', contributionAmount);
   console.log('typeof contributionAmount', typeof contributionAmount);
-  
+
+  const getAwsResponse = await s3.getObject({
+      Bucket: bucketName,
+      Key: `${secretsPath}/keystore.json`
+    }).promise();
+  const rawKeystoreFile = JSON.parse(getAwsResponse.Body);
+  const decrypted = web3.eth.accounts.decrypt(rawKeystoreFile, keystorePassphrase);
+
   const hash = soliditySha3(poolAddress, ownerAddress);
-  const signature = await web3.eth.sign(hash, poolbaseSignerAddress);
+  const { signature } = web3.eth.accounts.sign(hash, decrypted.privateKey, true);
+
+
   let amount = 0;
   if (status === 'pending_confirmation') {
-    amount = toWei(toBN(contributionAmount));
+    amount = toWei(contributionAmount.toString());
     console.log('amount', amount);
     console.log('typeof amount', typeof amount);
   }

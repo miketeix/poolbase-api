@@ -3,6 +3,7 @@ scripts/deployRopsten.js
 scripts/deployGiveth.js
 config/production.json
 config/development.json
+.env
 
 # Logs
 logs
