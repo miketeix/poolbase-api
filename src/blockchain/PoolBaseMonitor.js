@@ -19,7 +19,7 @@ const { EVENTS: {
   CONTRIBUTION_MADE,
   TOKEN_CLAIMED,
   REFUNDED,
-}} = Pools;
+}} = Contributions;
 
 // Storing this in the db ensures that we don't miss any events on a restart
 const defaultConfig = {

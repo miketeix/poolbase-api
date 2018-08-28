@@ -69,6 +69,7 @@ module.exports = {
 
   after: {
     all: [commons.populate({ schema })],
+    all: [commons.populate({ schema })], //commons.populate({ schema })
     find: [],
     get: [],
     create: [],

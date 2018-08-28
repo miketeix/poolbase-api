@@ -1,4 +1,5 @@
 import logger from 'winston';
+import { fromWei } from 'web3-utils';
 
 /**
  * class to keep feathers contributions cache in sync with pools contract
@@ -17,21 +18,24 @@ class Contributions {
     this.app = app;
     this.web3 = web3;
     this.contributions = this.app.service('contributions');
+    this.pools = this.app.service('pools');
     this.transactions = this.app.service('transactions');
   }
 
-  contributionMade(event) {
+  async contributionMade(event) {
     if (event.event !== Contributions.EVENTS.CONTRIBUTION_MADE)
       throw new Error(`contributions.contributionMade only handles ${Contributions.EVENTS.CONTRIBUTION_MADE} events`);
 
     const { poolContractAddress, msgSender, contribution } = event.returnValues;
+    const contributionAmount = parseInt(fromWei(contribution), 10);
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
       status: 'pending_confirmation', // ToDo: after updating to mongo, will place all statuses in enum
-      amount: fromWei(contribution)
+      amount: contributionAmount
     };
-    this.updateContribution(query, 'confirmed', event);
+    await this.updateContribution(query, 'confirmed', event);
+    this.updatePoolOnContribution(poolContractAddress, contributionAmount);
   }
   async tokenClaimed(event) {
     if (event.event !== Contribution.EVENTS.TOKEN_CLAIMED)
@@ -114,7 +118,7 @@ class Contributions {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
       status: 'pending_refund', // ToDo: after updating to mongo, will place all statuses in enum
-      amount: weiAmount //ToDo: verify if I need to convert from wei
+      amount: parseInt(fromWei(weiAmount), 10) //ToDo: verify if I need to convert from wei
     };
     this.updateContribution(query, 'refunded', event);
     // ToDo: update pool with tokenBalance
@@ -122,12 +126,16 @@ class Contributions {
 
   }
 
-  static async updateContribution(query, newStatus, event) {
+  async updateContribution(query, newStatus, event) {
+    console.log('query', query);
+    console.log('newStatus', newStatus);
     try {
       const { data: [contribution] } = await this.contributions
         .find({
           query
         })
+
+        console.log('found contribution', contribution);
       if (!contribution) return;
 
       logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
@@ -144,6 +152,7 @@ class Contributions {
       // check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
       logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
+      console.log('transaction', transaction);
 
       return await this.contributions.patch(contribution._id, {
         status: newStatus,
@@ -153,10 +162,32 @@ class Contributions {
         $unset: { pendingTx: true }
       });
     } catch(err) {
+      console.log('err here', err);
       logger.error(err);
     };
   }
+  async updatePoolOnContribution(poolContractAddress, contributionAmount ) {
+    try {
+      const { data: [ pool ]} = await this.pools.find({
+        query: {
+          contractAddress: poolContractAddress
+        }
+      });
 
+      if (!pool) return logger.warn(`No pool found at address ${poolContractAddress} when updating contribution`);
+
+      await this.pools.patch(pool._id, {
+          $inc: {
+            contributionCount: 1,
+            grossInvested: contributionAmount,
+            netInvested: (contributionAmount - (contributionAmount*pool.fee/100) - (contributionAmount*pool.poolbaseFee/100))
+          }
+      })
+    } catch(err) {
+      console.log('err here', err);
+      logger.error(err);
+    }
+  }
 }
 
 export default Contributions;
