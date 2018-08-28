@@ -30,7 +30,7 @@ app.configure(configuration());
 // Enable and configure CORS, security, compression, favicon and body parsing
 let origin;
 
-app.get('env') === 'production' ? origin = app.get('dappUrl') : origin = "*"; 
+app.get('env') === 'production' ? origin = app.get('dappUrl') : origin = "*";
 console.log('origin', origin);
 
 var corsOptions = {
@@ -73,4 +73,13 @@ app.use(handler());
 
 app.hooks(appHooks);
 
+const { percentFee } = app.get('poolbase');
+
+// set standard fee in database from config if not already there
+app.service('fees').update(1, {
+  type: 'standard',
+  percent: percentFee,
+}, {
+  nedb: { upsert: true }
+});
 module.exports = app;

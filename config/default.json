@@ -17,6 +17,9 @@
     "poolbaseSignerAddress": "0xc1f0b39c0163cfa89ec48af242c7a9573731f840"
     "keystorePassphrase": "poolbase123"
   },
+  "poolbase": {
+    "percentFee": 0.4
+  },
   "aws" : {
     "bucketName": "poolbase",
     "region": "eu-central-1",

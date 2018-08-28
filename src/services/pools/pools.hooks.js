@@ -19,6 +19,7 @@ import protectFromUpdate from '../../hooks/protectFromUpdate';
 import addPendingDeployTx from './hooks/addPendingDeployTx';
 import addPendingTx from './hooks/addPendingTx';
 import addInputsHash from './hooks/addInputsHash';
+import addPoolbaseFee from './hooks/addPoolbaseFee';
 import isPoolAdmin from './hooks/isPoolAdmin';
 import protectPayoutAddress from './hooks/protectPayoutAddress';
 import updateUserWalletList from './hooks/updateUserWalletList';
@@ -90,6 +91,7 @@ module.exports = {
       setUserId('owner'),
       addInputsHash,
       addPendingDeployTx,
+      addPoolbaseFee,
       sanitizePayloadAddresses([
         { fieldName: 'ownerAddress'},
         { fieldName: 'payoutAddress'},
@@ -133,6 +135,7 @@ module.exports = {
         'payoutAddress',
         'lockPayoutAddress',
         'payoutAddress'
+        'poolbaseFee',
         ]),
       protectPayoutAddress,
 
