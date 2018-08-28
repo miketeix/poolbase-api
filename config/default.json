@@ -23,7 +23,6 @@
   "aws" : {
     "bucketName": "poolbase",
     "region": "eu-central-1",
-    "secretsPath": "secrets/staging"
     "secretsPath": "secrets/development",
     "accessKey": "AKIAJY2QK656VZU5HOCA",
     "secretAccessKey": "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"

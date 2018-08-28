@@ -25,7 +25,6 @@ import protectPayoutAddress from './hooks/protectPayoutAddress';
 import updateUserWalletList from './hooks/updateUserWalletList';
 import handlePauseUnpause from './hooks/handlePauseUnpause';
 import revertToLastStatus from './hooks/revertToLastStatus';
-import addContributionCounts from './hooks/addContributionCounts';
 import getUserWhitelistedAddresses from './hooks/getUserWhitelistedAddresses';
 
 const restrict = () => context => {
@@ -125,7 +124,11 @@ module.exports = {
       commons.iff((({data: { status }}) => (status === 'unpaused')),
         revertToLastStatus),
       addLastStatus,
-      addPendingTx,
+      commons.iff((({data: { status }}) => ([
+        'pending_close_pool',
+        'pending_token_batch',
+        'pending_enable_refunds'].includes(status))),
+        addPendingTx),
       protectFromUpdate([
         'ownerAddress',
         'owner',
@@ -134,7 +137,8 @@ module.exports = {
         'admins',
         'payoutAddress',
         'lockPayoutAddress',
-        'payoutAddress'
+        'payoutAddress',
+        'poolbaseAddress',
         'poolbaseFee',
         ]),
       protectPayoutAddress,
@@ -148,13 +152,13 @@ module.exports = {
   after: {
     all: [commons.populate({ schema })],
     find: [
-      // addContributionCounts
-    ], // commons.fastJoin(poolResolvers)],//commons.populate({ schema: contributionCountSchema })],
+      // commons.unless(isPoolAdmin, commons.discard('pendingTx')),
+      // commons.unless(isPoolAdmin, commons.discard('whitelist')),
+    ],
     get: [
       // commons.iff(hasQueryParam('userWhitelisted'), getUserWhitelistedAddresses),
       commons.unless(isPoolAdmin, commons.discard('pendingTx')),
       commons.unless(isPoolAdmin, commons.discard('whitelist')),
-      // addContributionCounts
     ],
     create: [
       updateUserWalletList

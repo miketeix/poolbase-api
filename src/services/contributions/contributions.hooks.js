@@ -58,9 +58,11 @@ module.exports = {
     patch: [
       // restrict,
       // sanitizeAddress('contributorAddress', { validate: true }),
+      commons.stashBefore(),
       restrictToOwner({ idField: '_id', ownerField: 'owner'}),
-      addPendingTx,
-      commons.iff(({ data: { status }}) => !!status, commons.stashBefore(), addLastStatus),
+      commons.iff((({data: { status }}) => (['pending_claim', 'pending_refund'].includes(status))),
+        addPendingTx),
+      // addLastStatus,
       updatedAt,
     ],
 
@@ -68,7 +70,6 @@ module.exports = {
   },
 
   after: {
-    all: [commons.populate({ schema })],
     all: [commons.populate({ schema })], //commons.populate({ schema })
     find: [],
     get: [],
