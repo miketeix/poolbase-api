@@ -22,16 +22,14 @@ export default async context => {
 
   const web3 = new Web3(nodeUrl);
 
-  const { status, ownerAddress, pool: poolId, amount: contributionAmount } = context.data; // grab poolId or poolAddress
-
-  const { contractAddress: poolAddress } = await context.app.service('pools').get(poolId);
+  const { status, ownerAddress, poolAddress, amount: contributionAmount } = context.data;
 
   let functionName;
   switch (status) {
     case 'pending_confirmation':
       functionName = 'deposit';
       break;
-    case 'pending_claim':
+    case 'pending_claim_tokens':
       functionName = 'claimToken';
       break;
     case 'pending_refund':

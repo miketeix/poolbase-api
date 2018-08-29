@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import logger from 'winston';
 import errors from 'feathers-errors';
 import { setByDot, checkContext } from 'feathers-hooks-common';
-import { soliditySha3, hexToNumber, toWei, toBN } from 'web3-utils';
+import { soliditySha3, hexToNumber, toWei, toBN, asciiToHex } from 'web3-utils';
 
 import { percentToFractionArray } from '../../../utils/fractions';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
@@ -47,7 +47,14 @@ export default async context => {
               logger.error(`Missing args to status change ${status}`);
               return new errors.BadRequest( `Missing args for status change ${status}`);
             }
-            poolContractFunctionArgs = [ payoutAddress, payoutTxData ];
+            console.log('payoutTxData', payoutTxData);
+            console.log('typeof payoutTxData', typeof payoutTxData);
+            console.log('asciiToHex(payoutTxData)', asciiToHex(payoutTxData));
+            console.log('asciiToHex(\'payoutTxData\')', asciiToHex('payoutTxData'));
+            console.log('asciiToHex(\'0xAA\')', asciiToHex('0xAA'));
+            //ToDo: validate is Hex on backend
+            // ToDo: need to test with smartContract is asciiToHex needed if client is providing a hex string
+            poolContractFunctionArgs = [ payoutAddress, asciiToHex(payoutTxData)  ];
             poolContractFunctionName = 'adminClosesPool';
             break;
         case 'pending_token_batch':

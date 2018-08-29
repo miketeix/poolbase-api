@@ -13,20 +13,6 @@ import addPendingTx from './hooks/addPendingTx';
 import checkPoolWhitelist from './hooks/checkPoolWhitelist';
 import { updatedAt, createdAt } from '../../hooks/timestamps';
 
-//
-// const contributorCountByPoolAddress = async context => {
-//   try {
-//     const poolAddress = context.params.query.countByPool;
-//     const { total: count } = await context.service.find( { query: { $limit: 0, poolAddress }});
-//
-//     context.result = { count };
-//     return context;
-//   } catch(err) {
-//     logger.error(err);
-//     throw new errors.BadRequest();
-//   }
-// }
-
 const schema = {
   include: [
     {
@@ -58,9 +44,9 @@ module.exports = {
     patch: [
       // restrict,
       // sanitizeAddress('contributorAddress', { validate: true }),
-      commons.stashBefore(),
+      // commons.stashBefore(), // can't be multi where id is null, maybe check somehow
       restrictToOwner({ idField: '_id', ownerField: 'owner'}),
-      commons.iff((({data: { status }}) => (['pending_claim', 'pending_refund'].includes(status))),
+      commons.iff((({data: { status }}) => (['pending_claim_tokens', 'pending_refund'].includes(status))),
         addPendingTx),
       // addLastStatus,
       updatedAt,

@@ -38,14 +38,14 @@ class Contributions {
     this.updatePoolOnContribution(poolContractAddress, contributionAmount);
   }
   async tokenClaimed(event) {
-    if (event.event !== Contribution.EVENTS.TOKEN_CLAIMED)
-      throw new Error(`contributions.tokenClaimed only handles ${Contribution.EVENTS.TOKEN_CLAIMED} events`);
+    if (event.event !== Contributions.EVENTS.TOKEN_CLAIMED)
+      throw new Error(`contributions.tokenClaimed only handles ${Contributions.EVENTS.TOKEN_CLAIMED} events`);
 
     const { poolContractAddress, msgSender, amount, token } = event.returnValues;
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
-      status: 'pending_claim', // ToDo: after updating to mongo, will place all statuses in enum
+      status: 'pending_claim_tokens', // ToDo: after updating to mongo, will place all statuses in enum
     };
 
     try {
@@ -76,7 +76,7 @@ class Contributions {
         amountClaimed = amount;
       }
 
-      let newStatus = 'claim_made';
+      let newStatus = 'tokens_claimed';
       let updateStatusChangeQueue = {};
       logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
       if (contribution.statusChangeQueue && !!contribution.statusChangeQueue.length) {
@@ -84,7 +84,7 @@ class Contributions {
         updateStatusChangeQueue = {
           statusChangeQueue: contribution.statusChangeQueue
         }
-        logger.info(`Updating status of contribution ${contribution._id} with status from statusChangeQueue from 'claim_made' to ${newStatus}`);
+        logger.info(`Updating status of contribution ${contribution._id} with status from statusChangeQueue from 'tokens_claimed' to ${newStatus}`);
 
       }
 

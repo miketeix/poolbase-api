@@ -79,6 +79,7 @@ class Pools {
     try {
       await this.updatePool('payout_enabled', event, { $inc: { tokenBatchCount: 1 }});
       //patch(null=multi, update, params: {query})
+      console.log('event.returnValues.poolContractAddress', event.returnValues.poolContractAddress);
       await this.contributions.patch( // must come before other patch below
         null,
         {
@@ -195,7 +196,7 @@ class Pools {
     await this.updatePool(null, event, { fee: fromWei(toBN(event.returnValues.maxAllocation)) });
   }
 
-  static async updatePool(newStatus, event, additionalUpdates) {
+  async updatePool(newStatus, event, additionalUpdates) {
     try {
       const { data: [pool] } = await this.pools.find({
         query: {
@@ -218,7 +219,7 @@ class Pools {
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      newStatus && logger.info(`Updating status of pool ${contractAddress} from ${pool.status} to ${status}`)
+      newStatus && logger.info(`Updating status of pool ${pool.contractAddress} from ${pool.status} to ${newStatus}`)
 
       const payload = {
         $push: { transactions: transaction.txHash },
