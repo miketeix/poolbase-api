@@ -88,9 +88,9 @@ module.exports = {
       createdAt,
       setStatus('pending_deployment'),
       setUserId('owner'),
+      setPoolbaseFee,
       addInputsHash,
       addPendingDeployTx,
-      addPoolbaseFee,
       sanitizePayloadAddresses([
         { fieldName: 'ownerAddress'},
         { fieldName: 'payoutAddress'},

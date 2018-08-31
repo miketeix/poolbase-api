@@ -5,6 +5,7 @@ export default context => {
   const {
     maxAllocation,
     fee,
+    poolbaseFee,
     feePayoutCurrency,
     payoutAddress,
     adminPayoutAddress,
@@ -15,6 +16,7 @@ export default context => {
     // map of all values being hashed in PoolFactory smart contract
     _maxAllocation: { t: 'uint256', v: toWei(maxAllocation.toString()) },
     _adminPoolFee: { t: 'uint256[]', v: percentToFractionArray(parseFloat(fee, 10)) },
+    _poolbaseFee: { t: 'uint256[]', v: percentToFractionArray(parseFloat(poolbaseFee, 10)) },
     _isAdminFeeInWei: { t: 'bool', v: feePayoutCurrency === 'ether' },
     _payoutWallet: { t: 'address', v: payoutAddress },
     _adminPayoutWallet: { t: 'address', v: adminPayoutAddress },

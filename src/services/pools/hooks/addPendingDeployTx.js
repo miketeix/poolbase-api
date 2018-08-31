@@ -16,6 +16,7 @@ export default async context => {
     const {
       maxAllocation,
       fee,
+      poolbaseFee,
       feePayoutCurrency,
       payoutAddress,
       adminPayoutAddress,
@@ -25,6 +26,7 @@ export default async context => {
     const argMap = {
       _maxAllocation: toWei(toBN(maxAllocation)),
       _adminPoolFee: percentToFractionArray(parseFloat(fee, 10)),
+      _poolbaseFee: percentToFractionArray(parseFloat(poolbaseFee, 10)),
       _isAdminFeeInWei: feePayoutCurrency === 'ether',
       _payoutWallet: payoutAddress,
       _adminPayoutWallet: adminPayoutAddress,
