@@ -12,8 +12,8 @@
   "uploadsBaseUrl": "http://localhost:3030/uploads/",
   "blockchain": {
     "nodeUrl": "ws://localhost:8545",
-    "poolFactoryAddress": "0xc89ce4735882c9f0f0fe26686c53074e09b0d550",
-    "eventEmitterAddress": "0xd833215cbcc3f914bd1c9ece3ee7bf8b14f841bb",
+    "poolFactoryAddress": "0x3acc15de35aab8a94b7d2426e27c887541e4de6c",
+    "eventEmitterAddress": "0x2c5f3c004878923f55a2a255f89fe29393177509",
     "poolbaseSignerAddress": "0xc1f0b39c0163cfa89ec48af242c7a9573731f840",
     "keystorePassphrase": "poolbase123"
   },

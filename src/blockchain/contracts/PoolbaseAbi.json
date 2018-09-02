@@ -118,20 +118,6 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "numOfBatches",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
     "name": "paused",
     "outputs": [
       {
@@ -188,6 +174,20 @@
       {
         "name": "",
         "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "totalTokens",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
       }
     ],
     "payable": false,
@@ -277,29 +277,6 @@
       {
         "name": "",
         "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "batches",
-    "outputs": [
-      {
-        "name": "rate",
-        "type": "uint256"
-      },
-      {
-        "name": "totalTokens",
-        "type": "uint256"
       }
     ],
     "payable": false,
@@ -515,7 +492,7 @@
     "inputs": [
       {
         "name": "_bouncers",
-        "type": "address[]"
+        "type": "address[2]"
       },
       {
         "name": "_maxAllocation",
@@ -812,7 +789,7 @@
       },
       {
         "name": "txData",
-        "type": "bytes32"
+        "type": "bytes"
       }
     ],
     "name": "adminClosesPool",

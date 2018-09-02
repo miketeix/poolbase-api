@@ -85,25 +85,6 @@
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "poolbaseFee",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [],
     "name": "libraryAddress",
     "outputs": [
@@ -242,7 +223,7 @@
     "inputs": [
       {
         "name": "_superBouncers",
-        "type": "address[2]"
+        "type": "address[]"
       }
     ],
     "name": "setSuperBouncers",
@@ -263,7 +244,7 @@
         "type": "address"
       }
     ],
-    "name": "addBouncersToAPool",
+    "name": "addBouncersToPool",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -281,7 +262,7 @@
         "type": "address"
       }
     ],
-    "name": "removeBouncersToAPool",
+    "name": "removeBouncersFromPool",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -296,20 +277,6 @@
       }
     ],
     "name": "setPoolbasePayoutWallet",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_poolbaseFee",
-        "type": "uint256[2]"
-      }
-    ],
-    "name": "setPoolbaseFee",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -349,24 +316,6 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "getPoolbaseFee",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [
       {
         "name": "creator",
@@ -393,6 +342,10 @@
       },
       {
         "name": "_adminPoolFee",
+        "type": "uint256[2]"
+      },
+      {
+        "name": "_poolbaseFee",
         "type": "uint256[2]"
       },
       {

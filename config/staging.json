@@ -10,13 +10,21 @@
   "uploads": "../uploads",
   "uploadsBaseUrl": "https://poolbase-api.herokuapp.com/uploads/",
   "blockchain": {
-    "nodeUrl": "wss://ropsten.infura.io/ws",
-    "poolFactoryAddress": "0x2b22B6674F6aC44bB89c1016eFbC6Ec54549440D",
-    "eventEmitterAddress": "0xd84e2462b412bba3fd81f95812823f7c6a72bab9",
+    "nodeUrl": "wss://rinkeby.infura.io/ws",
+    "poolFactoryAddress": "0x55bab1fc5200a0a482e69b39d86061aa81078dbe",
+    "eventEmitterAddress": "0x7bEd63262C3217938375A3b6fcc3bFe3C64b9A3C",
+    "poolbaseSignerAddress": "0xc1f0b39c0163cfa89ec48af242c7a9573731f840",
     "startingBlock": 0,
   },
+  "poolbase": {
+    "percentFee": 0.4
+  },
+  "aws" : {
+    "bucketName": "poolbase",
+    "region": "eu-central-1",
+    "secretsPath": "secrets/development",
+  },
   "authentication": {
-    "secret": "fc04928dc74759168bf7cbc58bd2e43983e050342a82d25af4b93396d904020006b84e67cb45030fe906db9039d4aba720b6dc68564a3577cb1e6e34c9c8a1b6cbc6e3f824ead946ab9f66180647deb5ad097378b1e40440dc9e102a8113b904931481133a80aac801a2f65970e02edaf579b4cfee10cf704d86adbb819cae14578cc4d9f126bae6cad65ae4ad243c550f4af42ad743b2d4061ec54b80e64978a98a0283d99ee2489b9059ca9ac0681f4bd54eb8052ab2a11a5b96e58a171dde225e182913ae4cb60c34cc8b54f93986ffa2c57284a3cd2710170e0cfd272f303d6852447d6a2863fb644d02465b2f2be667c9fbd7798b4f5cc2e70749840f2c",
     "strategies": [
       "jwt",
       "web3",
