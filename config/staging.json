@@ -14,7 +14,7 @@
     "poolFactoryAddress": "0x55bab1fc5200a0a482e69b39d86061aa81078dbe",
     "eventEmitterAddress": "0x7bEd63262C3217938375A3b6fcc3bFe3C64b9A3C",
     "poolbaseSignerAddress": "0xc1f0b39c0163cfa89ec48af242c7a9573731f840",
-    "startingBlock": 0,
+    "startingBlock": 0
   },
   "poolbase": {
     "percentFee": 0.4
@@ -22,7 +22,7 @@
   "aws" : {
     "bucketName": "poolbase",
     "region": "eu-central-1",
-    "secretsPath": "secrets/development",
+    "secretsPath": "secrets/development"
   },
   "authentication": {
     "strategies": [
