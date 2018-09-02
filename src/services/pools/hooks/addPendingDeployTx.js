@@ -5,6 +5,7 @@ import { setByDot } from 'feathers-hooks-common';
 import { soliditySha3, hexToNumber, toWei, toBN } from 'web3-utils';
 import { percentToFractionArray } from '../../../utils/fractions';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
+import { nullAddress } from '../../../constants';
 
 import poolbaseFactoryAbi from '../../../blockchain/contracts/PoolbaseFactoryAbi.json';
 
@@ -24,11 +25,11 @@ export default async context => {
     } = context.data;
 
     const argMap = {
-      _maxAllocation: toWei(toBN(maxAllocation)),
+      _maxAllocation: toWei(maxAllocation.toString()),
       _adminPoolFee: percentToFractionArray(parseFloat(fee, 10)),
       _poolbaseFee: percentToFractionArray(parseFloat(poolbaseFee, 10)),
       _isAdminFeeInWei: feePayoutCurrency === 'ether',
-      _payoutWallet: payoutAddress,
+      _payoutWallet: payoutAddress || nullAddress,
       _adminPayoutWallet: adminPayoutAddress,
       _eventEmitterContract: eventEmitterAddress,
       _admins: admins.map(({ address }) => address),

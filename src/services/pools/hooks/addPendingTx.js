@@ -94,8 +94,7 @@ export default async context => {
 
     const functionAbi = getFunctionAbiByName(poolbaseAbi, poolContractFunctionName);
 
-    let gasLimit;
-    gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, poolContractFunctionName, poolContractFunctionArgs);
+    const gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, poolContractFunctionName, poolContractFunctionArgs);
 
     const data = web3.eth.abi.encodeFunctionCall(functionAbi, poolContractFunctionArgs);
     // ToDo: add gasPrice

@@ -1,5 +1,6 @@
 import { soliditySha3, toWei } from 'web3-utils';
 import { percentToFractionArray } from '../../../utils/fractions';
+import { nullAddress } from '../../../constants';
 
 export default context => {
   const {
@@ -18,7 +19,7 @@ export default context => {
     _adminPoolFee: { t: 'uint256[]', v: percentToFractionArray(parseFloat(fee, 10)) },
     _poolbaseFee: { t: 'uint256[]', v: percentToFractionArray(parseFloat(poolbaseFee, 10)) },
     _isAdminFeeInWei: { t: 'bool', v: feePayoutCurrency === 'ether' },
-    _payoutWallet: { t: 'address', v: payoutAddress },
+    _payoutWallet: { t: 'address', v: payoutAddress || nullAddress },
     _adminPayoutWallet: { t: 'address', v: adminPayoutAddress },
     _admins: { t: 'address[]', v: admins.map(({ address }) => address) },
   };

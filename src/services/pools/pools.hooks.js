@@ -19,7 +19,7 @@ import protectFromUpdate from '../../hooks/protectFromUpdate';
 import addPendingDeployTx from './hooks/addPendingDeployTx';
 import addPendingTx from './hooks/addPendingTx';
 import addInputsHash from './hooks/addInputsHash';
-import addPoolbaseFee from './hooks/addPoolbaseFee';
+import setPoolbaseFee from './hooks/setPoolbaseFee';
 import isPoolAdmin from './hooks/isPoolAdmin';
 import protectPayoutAddress from './hooks/protectPayoutAddress';
 import updateUserWalletList from './hooks/updateUserWalletList';
