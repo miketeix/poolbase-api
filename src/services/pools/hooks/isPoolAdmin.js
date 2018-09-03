@@ -17,8 +17,8 @@ export default async (context) => {
 
   if (context.params.user._id === pool.owner._id ) return true;
 
-  const userAddresses = context.params.user.wallets && context.params.user.wallets.map(({address}) => address);
-  if (!userWalletAddresses.length) return false;
+  const userAddresses = context.params.user.wallets && context.params.user.wallets.map(({address}) => address) || []
+  if (!userAddresses.length) return false;
 
   const poolAdminAddresses = pool.admins && pool.admins.map(({address}) => address);
   adminAddresses.push(pool.owner.address);

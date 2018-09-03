@@ -1,6 +1,6 @@
 {
   "host": "https://poolbase-api.herokuapp.com/",
-  "dappUrl": "https://distracted-shockley-51ac50.netlify.com",
+  "dappUrl": "https://poolbase.io",
   "public": "../public/",
   "paginate": {
     "default": 25,
