@@ -7,7 +7,7 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const fee = new Schema({
-    id: { type: String, required: true, index: true, unique: true },
+    _id: { type: String, required: true, index: true, unique: true },
     type: { type: String, required: true },
     percent: { type: Number, required: true },
   }, {

@@ -83,6 +83,6 @@ app.service('fees').patch(1, {
   type: 'standard',
   percent: percentFee,
 }, {
-  mongoose: { upsert: true }  
+    mongoose: { upsert: true }
 });
 module.exports = app;
