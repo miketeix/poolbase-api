@@ -1,5 +1,4 @@
 // Initializes the `fees` service on path `/fees`
-// const createService = require('feathers-nedb');
 import createService from 'feathers-mongoose';
 const createModel = require('../../models/fees.model');
 const hooks = require('./fees.hooks');
