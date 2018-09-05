@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('mongoose-type-email');
 const logger = require('winston');
 
 module.exports = function() {
