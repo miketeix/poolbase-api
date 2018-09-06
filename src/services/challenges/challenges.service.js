@@ -26,7 +26,7 @@ class ChallengeService extends Service {
 
   create(data, params) {
     if (!data.address) throw new errors.BadRequest('address is required');
-    params.nedb = {
+    params.mongoose = {
       upsert: true,
     };
 

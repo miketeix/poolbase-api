@@ -32,7 +32,13 @@ class Pools {
     if (event.event !== Pools.EVENTS.CONTRACT_INSTANTIATION)
       throw new Error(`pools.deployed only handles ${Pools.EVENTS.CONTRACT_INSTANTIATION} events`);
 
-    const { msgSender, instantiation, hashMessage, transactionHash, event: eventName } = event.returnValues;
+    const {
+      msgSender,
+      instantiation,
+      hashMessage,
+      transactionHash,
+      event: eventName,
+    } = event.returnValues;
     try {
       const { data: [pool] } = await this.pools.find({
         query: {
@@ -43,7 +49,9 @@ class Pools {
       });
 
       if (!pool) {
-        logger.warn(`No pool found for contract instantiation event from message sender ${msgSender} and pool contract ${instantiation}`);
+        logger.warn(
+          `No pool found for contract instantiation event from message sender ${msgSender} and pool contract ${instantiation}`,
+        );
         return;
       }
 
@@ -59,7 +67,7 @@ class Pools {
         status: 'active',
         contractAddress: instantiation,
         $push: { transactions: transaction.txHash },
-        $unset: { pendingTx: true}
+        $unset: { pendingTx: true },
       });
     } catch (err) {
       logger.error(err);
@@ -77,41 +85,41 @@ class Pools {
         `pools.newTokenBatch only handles ${Pools.EVENTS.TOKEN_PAYOUTS_ENABLED} events`,
       );
     try {
-      await this.updatePool('payout_enabled', event, { $inc: { tokenBatchCount: 1 }});
+      await this.updatePool('payout_enabled', event, { $inc: { tokenBatchCount: 1 } });
       //patch(null=multi, update, params: {query})
       console.log('event.returnValues.poolContractAddress', event.returnValues.poolContractAddress);
-      await this.contributions.patch( // must come before other patch below
+      await this.contributions.patch(
+        // must come before other patch below
         null,
         {
           $push: {
-            statusChangeQueue: 'tokens_available'
-          }
+            statusChangeQueue: 'tokens_available',
+          },
         },
         {
           query: {
             poolAddress: event.returnValues.poolContractAddress,
             status: {
-              $in: ['tokens_available', 'pending_claim', 'paused']
-            }
-          }
-        }
+              $in: ['tokens_available', 'pending_claim', 'paused'],
+            },
+          },
+        },
       );
       await this.contributions.patch(
         null,
         {
-          status: 'tokens_available'
+          status: 'tokens_available',
         },
         {
           query: {
             poolAddress: event.returnValues.poolContractAddress,
             status: {
-              $in: ['confirmed', 'claim_made']
-            }
-          }
-        }
+              $in: ['confirmed', 'claim_made'],
+            },
+          },
+        },
       );
-
-    } catch(err) {
+    } catch (err) {
       logger.error(err);
     }
   }
@@ -124,13 +132,13 @@ class Pools {
     await this.contributions.patch(
       null,
       {
-        status: 'refund_enabled'
+        status: 'refund_enabled',
       },
       {
         query: {
-          poolAddress: event.returnValues.poolContractAddress
-        }
-      }
+          poolAddress: event.returnValues.poolContractAddress,
+        },
+      },
     );
   }
   async paused(event) {
@@ -141,15 +149,14 @@ class Pools {
     await this.contributions.patch(
       null,
       {
-        status: 'paused'
+        status: 'paused',
       },
       {
         query: {
-          poolAddress: event.returnValues.poolContractAddress
-        }
-      }
+          poolAddress: event.returnValues.poolContractAddress,
+        },
+      },
     );
-
   }
   async unpaused(event) {
     if (event.event !== Pools.EVENTS.UNPAUSE)
@@ -162,37 +169,50 @@ class Pools {
         paginate: false,
         query: {
           poolAddress: event.returnValues.poolContractAddress,
-          status: 'paused'
-        }
+          status: 'paused',
+        },
       });
-      await Promise.all(contributions.map(async contribution => {
-        return await this.contributions.patch(contribution._id, { status: contribution.lastStatus });
-      }));
-    } catch(err) {
+      await Promise.all(
+        contributions.map(async contribution => {
+          return await this.contributions.patch(contribution._id, {
+            status: contribution.lastStatus,
+          });
+        }),
+      );
+    } catch (err) {
       logger.error(err);
     }
-
   }
 
   async adminPayoutWalletSet(event) {
     if (event.event !== Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET)
-      throw new Error(`pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`);
+      throw new Error(
+        `pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`,
+      );
 
-    await this.updatePool(null, event, { adminPayoutAddress: event.returnValues.adminPayoutWallet });
+    await this.updatePool(null, event, {
+      adminPayoutAddress: event.returnValues.adminPayoutWallet,
+    });
   }
 
   async adminPoolFeeSet(event) {
     if (event.event !== Pools.EVENTS.ADMIN_POOL_FEE_SET)
-      throw new Error(`pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`);
+      throw new Error(
+        `pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`,
+      );
 
-    await this.updatePool(null, event, { fee: fractionArrayToPercent(event.returnValues.adminPoolFee) });
+    await this.updatePool(null, event, {
+      fee: fractionArrayToPercent(event.returnValues.adminPoolFee),
+    });
   }
 
   async maxAllocationChanged(event) {
     if (event.event !== Pools.EVENTS.MAX_ALLOCATION_CHANGED)
-      throw new Error(`pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`);
+      throw new Error(
+        `pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`,
+      );
 
-    const {fromWei, toBN} = this.web3.utils;
+    const { fromWei, toBN } = this.web3.utils;
     await this.updatePool(null, event, { fee: fromWei(toBN(event.returnValues.maxAllocation)) });
   }
 
@@ -219,20 +239,22 @@ class Pools {
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      newStatus && logger.info(`Updating status of pool ${pool.contractAddress} from ${pool.status} to ${newStatus}`)
+      newStatus &&
+        logger.info(
+          `Updating status of pool ${pool.contractAddress} from ${pool.status} to ${newStatus}`,
+        );
 
       const payload = {
         $push: { transactions: transaction.txHash },
-        $unset: { pendingTx: true},
-        ...additionalUpdates
-      }
+        $unset: { pendingTx: true },
+        ...additionalUpdates,
+      };
 
       if (newStatus) {
-        payload.status = newStatus
+        payload.status = newStatus;
       }
 
       return await this.pools.patch(pool._id, payload);
-
     } catch (err) {
       logger.error(err);
     }

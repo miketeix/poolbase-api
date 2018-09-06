@@ -41,6 +41,9 @@ export default class {
     if (opts.startingBlock && opts.startingBlock !== 0) {
       defaultConfig.lastBlock = opts.startingBlock - 1;
     }
+
+    this.subscribePoolFactoryEvents = this.subscribePoolFactoryEvents.bind(this)
+    this.subscribePoolbaseEvents = this.subscribePoolbaseEvents.bind(this)
   }
 
   /**
@@ -101,7 +104,7 @@ export default class {
    */
   getConfig() {
     return new Promise((resolve, reject) => {
-      this.model.findOne({}, (err, doc) => {
+      this.model.findOne({}, 'lastBlock', { lean: true}, (err, doc) => {
         if (err) {
           reject(err);
           return;
@@ -135,20 +138,24 @@ export default class {
 
       if (!this.config._id) this.initializingConfig = true;
 
-      this.model.update(
-        { _id: this.config._id },
-        this.config,
-        { upsert: true },
-        (err, numAffected, affectedDocs, upsert) => {
-          if (err) logger.error('updateConfig ->', err);
+      const docId = this.config._id || null;
+      this.model.findOneAndUpdate(docId, {
+        lastBlock: this.config.lastBlock
+      }, {
+          upsert: true,
+          new: true,
+          lean: true,
+          strict: false
+      }).then((doc, err) => {
+        this.initializingConfig = false;
+        if (err) logger.error('updateConfig ->', err);
 
-          if (upsert) {
-            this.config._id = affectedDocs._id;
-            this.initializingConfig = false;
-            if (onConfigInitialization) onConfigInitialization();
-          }
-        },
-      );
+        if (doc) {
+          this.config._id = doc._id;
+          this.initializingConfig = false;
+          if (onConfigInitialization) onConfigInitialization();
+        }
+      });
     }
   }
 
