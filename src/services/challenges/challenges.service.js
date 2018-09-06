@@ -1,5 +1,5 @@
 // Initializes the `challenges` service on path `/authentication/challenges`
-import { Service } from 'feathers-nedb';
+const { Service } = require('feathers-mongoose');
 import errors from 'feathers-errors';
 
 import { toChecksumAddress } from 'web3-utils';
