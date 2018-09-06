@@ -95,9 +95,9 @@ class PoolEventHandler {
         `pools.newTokenBatch only handles ${poolEvents.TOKEN_PAYOUTS_ENABLED} events`,
       );
     try {
+
       await this.updatePool(PoolStatus.PAYOUT_ENABLED, event, { $inc: { tokenBatchCount: 1 } });
       // patch(null=multi, update, params: {query})
-
       await this.contributions.patch(
         // must come before other patch below
         null,
