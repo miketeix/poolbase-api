@@ -77,12 +77,12 @@ const schema = {
 
 module.exports = {
   before: {
-    all: [context=> {
-      console.log('context.params.query', context.params.query);
-    }],
-    find: [
-      sanitizeQueryAddresses
+    all: [
+      context => {
+        console.log('context.params.query', context.params.query);
+      },
     ],
+    find: [sanitizeQueryAddresses],
     get: [],
     create: [
       createdAt,
@@ -92,15 +92,16 @@ module.exports = {
       addInputsHash,
       addPendingDeployTx,
       sanitizePayloadAddresses([
-        { fieldName: 'ownerAddress'},
-        { fieldName: 'payoutAddress'},
-        { fieldName: 'adminPayoutAddress'},
-        { fieldName: 'whitelist', objectArrayKey: 'address'},
-        { fieldName: 'admins', objectArrayKey: 'address'},
+        { fieldName: 'ownerAddress' },
+        { fieldName: 'payoutAddress' },
+        { fieldName: 'adminPayoutAddress' },
+        { fieldName: 'whitelist', objectArrayKey: 'address' },
+        { fieldName: 'admins', objectArrayKey: 'address' },
       ]),
     ],
-    update: [ // for pool edit page
-      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner'})),
+    update: [
+      // for pool edit page
+      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner' })),
       restrict(),
       sanitizeAddress('ownerAddress', { required: true, validate: true }),
       sanitizeHtml('description'),
@@ -112,23 +113,22 @@ module.exports = {
       //   return context
       // }
       sanitizePayloadAddresses([
-        { fieldName: 'payoutAddress'},
-        { fieldName: 'adminPayoutAddress'},
-        { fieldName: 'tokenAddress'},
-        { fieldName: 'whitelist', objectArrayKey: 'address'},
-        { fieldName: 'admins', objectArrayKey: 'address'},
+        { fieldName: 'payoutAddress' },
+        { fieldName: 'adminPayoutAddress' },
+        { fieldName: 'tokenAddress' },
+        { fieldName: 'whitelist', objectArrayKey: 'address' },
+        { fieldName: 'admins', objectArrayKey: 'address' },
       ]),
       // sanitizeQueryAddresses
-      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner'})),
+      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner' })),
       commons.stashBefore(),
-      commons.iff((({data: { status }}) => (status === 'unpaused')),
-        revertToLastStatus),
+      commons.iff(({ data: { status } }) => status === 'unpaused', revertToLastStatus),
       addLastStatus,
-      commons.iff((({data: { status }}) => ([
-        'pending_close_pool',
-        'pending_token_batch',
-        'pending_enable_refunds'].includes(status))),
-        addPendingTx),
+      commons.iff(
+        ({ data: { status } }) =>
+          ['pending_close_pool', 'pending_token_batch', 'pending_enable_refunds'].includes(status),
+        addPendingTx,
+      ),
       protectFromUpdate([
         'ownerAddress',
         'owner',
@@ -140,7 +140,7 @@ module.exports = {
         'payoutAddress',
         'poolbaseAddress',
         'poolbaseFee',
-        ]),
+      ]),
       protectPayoutAddress,
 
       // sanitizeHtml('description'),
@@ -160,9 +160,7 @@ module.exports = {
       commons.unless(isPoolAdmin, commons.discard('pendingTx')),
       commons.unless(isPoolAdmin, commons.discard('whitelist')),
     ],
-    create: [
-      updateUserWalletList
-    ],
+    create: [updateUserWalletList],
     update: [],
     patch: [
       // handlePauseUnpause
