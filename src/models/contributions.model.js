@@ -1,12 +1,19 @@
-const NeDB = require('nedb');
-const path = require('path');
-
+// contribution-model.js - A mongoose model
+//
+// See http://mongoosejs.com/docs/models.html
+// for more of what you can do here.
 module.exports = function(app) {
-  const dbPath = app.get('nedb');
-  const Model = new NeDB({
-    filename: path.join(dbPath, 'contributions.db'),
-    autoload: true,
-  });
+  const mongooseClient = app.get('mongooseClient');
+  const { Schema } = mongooseClient;
+  const contribution = new Schema(
+    {
+      poolAddress: { type: String, required: true },
+      amount: { type: Number, required: true },
+      status: { type: String, required: true },
+      amountClaimed: { type: Number },
+    },
+    { timestamps: true },
+  );
 
-  return Model;
+  return mongooseClient.model('contribution', contribution);
 };

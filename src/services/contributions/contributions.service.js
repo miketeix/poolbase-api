@@ -1,5 +1,5 @@
 // Initializes the `contributions` service on path `/contributions`
-const createService = require('feathers-nedb');
+import createService from 'feathers-mongoose';
 const createModel = require('../../models/contributions.model');
 const hooks = require('./contributions.hooks');
 const filters = require('./contributions.filters');
