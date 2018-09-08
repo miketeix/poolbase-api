@@ -6,6 +6,8 @@ import commons from 'feathers-hooks-common';
 export default async (context) => {
   commons.checkContext(context, null, ['get', 'patch'], 'isPoolAdmin');
 
+  console.log('context.params.user', context.params.user);
+
   if (!context.params.user) return false;
   let pool;
   try {
@@ -15,15 +17,16 @@ export default async (context) => {
     return errors.GeneralError('handlePauseUnpause', err);
   }
 
+  console.log('pool.owner', pool.owner);
   if (context.params.user._id === pool.owner._id ) return true;
 
   const userAddresses = context.params.user.wallets && context.params.user.wallets.map(({address}) => address) || []
   if (!userAddresses.length) return false;
 
   const poolAdminAddresses = pool.admins && pool.admins.map(({address}) => address);
-  adminAddresses.push(pool.owner.address);
+  poolAdminAddresses.push(pool.owner.address);
 
-  userAdminAddresses = intersection(userAddresses, poolAdminAddresses);
+  const userAdminAddresses = intersection(userAddresses, poolAdminAddresses);
 
   return !!userAdminAddresses.length;
 

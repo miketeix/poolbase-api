@@ -11,7 +11,9 @@ module.exports = function(app) {
   const AddressSchema = addressSchema(Schema);
   const pool = new Schema(
     {
+      owner: { type: String, required: true },
       ownerAddress: { type: String, required: true },
+      contractAddress: { type: String},
       maxAllocation: { type: Number, required: true },
       fee: { type: Number, required: true },
       feePayoutCurrency: { type: String, required: true },
@@ -25,6 +27,11 @@ module.exports = function(app) {
       maxContribution: { type: Number, required: true },
       admins: [ AddressSchema ],
       whitelist: [ AddressSchema ],
+      contributionCount: { type: Number },
+      grossInvested: { type: Number },
+      netInvested: { type: Number },
+      transactions: [ {type: String} ],
+      pendingTx: { type: Schema.Types.Mixed }
     },
     {
       timestamps: true,
