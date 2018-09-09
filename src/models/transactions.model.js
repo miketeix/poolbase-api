@@ -9,6 +9,7 @@ module.exports = function(app) {
   const transactions = new Schema(
     {
       poolStatus: { type: String, required: true },
+      contributionStatus: { type: String },
       txHash: { type: Object, required: true },
       poolAddress: { type: String, required: true },
       msgSender: { type: String, required: true },

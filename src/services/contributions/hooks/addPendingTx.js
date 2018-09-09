@@ -41,10 +41,6 @@ export default async context => {
   }
 
   const functionAbi = getFunctionAbiByName(poolbaseAbi, functionName);
-  console.log('poolAddress', poolAddress);
-  console.log('ownerAddress', ownerAddress);
-  console.log('contributionAmount', contributionAmount);
-  console.log('typeof contributionAmount', typeof contributionAmount);
 
   const getAwsResponse = await s3.getObject({
       Bucket: bucketName,
@@ -60,10 +56,7 @@ export default async context => {
   let amount = 0;
   if (status === 'pending_confirmation') {
     amount = toWei(contributionAmount.toString());
-    console.log('amount', amount);
-    console.log('typeof amount', typeof amount);
   }
-  console.log('functionAbi', functionAbi);
   const data = web3.eth.abi.encodeFunctionCall(functionAbi, [signature]);
   let gasLimit;
   try {

@@ -79,7 +79,9 @@ module.exports = {
   before: {
     all: [
       context => {
-        console.log('context.params.query', context.params.query);
+        // console.log('Before ALL: Pools: params.query', context.params.query);
+        // console.log('Before ALL: Pools: params.user', context.params.user);
+        // console.log('Before ALL: Pools: params.provider', context.params.provider);
       },
     ],
     find: [sanitizeQueryAddresses],
@@ -120,8 +122,8 @@ module.exports = {
         { fieldName: 'admins', objectArrayKey: 'address' },
       ]),
       // sanitizeQueryAddresses
-      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner' })),
       commons.stashBefore(),
+      commons.unless(isPoolAdmin, restrictToOwner({ idField: '_id', ownerField: 'owner' })),
       commons.iff(({ data: { status } }) => status === 'unpaused', revertToLastStatus),
       addLastStatus,
       commons.iff(
