@@ -1,6 +1,8 @@
 import logger from 'winston';
 import { fromWei } from 'web3-utils';
 
+import { ContributionStatus } from '../models/contributions.model';
+
 /**
  * class to keep feathers contributions cache in sync with pools contract
  */
@@ -31,11 +33,12 @@ class Contributions {
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
-      status: 'pending_confirmation', // ToDo: after updating to mongo, will place all statuses in enum
+      status: ContributionStatus.PENDING_CONFIRMATION,
       amount: contributionAmount
     };
-    await this.updateContribution(query, 'confirmed', event);
-    this.updatePoolOnContribution(poolContractAddress, contributionAmount);
+    const newContribution = await this.updateContribution(query, ContributionStatus.CONFIRMED, event);
+
+    this.updatePoolOnContribution(newContribution.pool, contributionAmount);
   }
   async tokenClaimed(event) {
     if (event.event !== Contributions.EVENTS.TOKEN_CLAIMED)
@@ -45,7 +48,7 @@ class Contributions {
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
-      status: 'pending_claim_tokens', // ToDo: after updating to mongo, will place all statuses in enum
+      status: ContributionStatus.PENDING_CLAIM_TOKENS,
     };
 
     try {
@@ -58,7 +61,8 @@ class Contributions {
       logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
 
       const transaction = await this.transactions.create({
-          poolStatus: contribution.status,//borrowing the pool or contribution status
+          contributionStatus: contribution.status,
+          poolStatus: contribution.pool.status,
           txHash: event.transactionHash,
           poolAddress: poolContractAddress,
           msgSender: event.returnValues.msgSender,
@@ -69,14 +73,8 @@ class Contributions {
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      let amountClaimed;
-      if (contribution.tokenAmountClaimed) {
-        amountClaimed = contribution.tokenAmountClaimed + amount; // ToDo: make sure both numbers
-      } else {
-        amountClaimed = amount;
-      }
-
-      let newStatus = 'tokens_claimed';
+        // statusChangeQueue
+      let newStatus = ContributionStatus.TOKENS_CLAIMED;
       let updateStatusChangeQueue = {};
       logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
       if (contribution.statusChangeQueue && !!contribution.statusChangeQueue.length) {
@@ -84,21 +82,21 @@ class Contributions {
         updateStatusChangeQueue = {
           statusChangeQueue: contribution.statusChangeQueue
         }
-        logger.info(`Updating status of contribution ${contribution._id} with status from statusChangeQueue from 'tokens_claimed' to ${newStatus}`);
+        logger.info(`Updating status of contribution ${contribution._id} with status from statusChangeQueue from ${ContributionStatus.TOKENS_CLAIMED} to ${newStatus}`);
 
       }
 
       await this.contributions.patch(contribution._id, {
         status: newStatus,
-        tokenAmountClaimed: amountClaimed,
+        ...updateStatusChangeQueue,
         $push: {
           transactions: transaction.txHash
         },
         $inc: {
-          tokenClaimCount: 1
+          tokenClaimCount: 1,
+          tokenAmountClaimed: amount
         },
         $unset: { pendingTx: true },
-        ...updateStatusChangeQueue
       });
 
     } catch(err) {
@@ -117,31 +115,29 @@ class Contributions {
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
-      status: 'pending_refund', // ToDo: after updating to mongo, will place all statuses in enum
-      amount: parseInt(fromWei(weiAmount), 10) //ToDo: verify if I need to convert from wei
+      status: ContributionStatus.PENDING_REFUND,
+      amount: parseInt(fromWei(weiAmount), 10)
     };
-    this.updateContribution(query, 'refunded', event);
+    this.updateContribution(query, ContributionStatus.REFUND_RECEIVED, event);
     // ToDo: update pool with tokenBalance
     // call updateTokenTotal, or updateEthTotal on PoolsService
 
   }
 
   async updateContribution(query, newStatus, event) {
-    console.log('query', query);
-    console.log('newStatus', newStatus);
     try {
       const { data: [contribution] } = await this.contributions
         .find({
           query
         })
 
-        console.log('found contribution', contribution);
       if (!contribution) return;
 
       logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
 
       const transaction = await this.transactions.create({
-          poolStatus: query.status,//borrowing the pool or contribution status
+          contributionStatus: query.status,
+          poolStatus: contribution.pool.status,
           txHash: event.transactionHash,
           poolAddress: query.poolAddress,
           msgSender: event.returnValues.msgSender,
@@ -152,7 +148,6 @@ class Contributions {
       // check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
       logger.info(`Updating status of contribution ${contribution._id} from ${contribution.status} to ${newStatus}`);
-      console.log('transaction', transaction);
 
       return await this.contributions.patch(contribution._id, {
         status: newStatus,
@@ -162,19 +157,13 @@ class Contributions {
         $unset: { pendingTx: true }
       });
     } catch(err) {
-      console.log('err here', err);
       logger.error(err);
     };
   }
-  async updatePoolOnContribution(poolContractAddress, contributionAmount ) {
+  async updatePoolOnContribution(pool, contributionAmount ) {
     try {
-      const { data: [ pool ]} = await this.pools.find({
-        query: {
-          contractAddress: poolContractAddress
-        }
-      });
 
-      if (!pool) return logger.warn(`No pool found at address ${poolContractAddress} when updating contribution`);
+      if (!pool) return logger.warn(`No pool provided to updatePoolOnContribution`);
 
       await this.pools.patch(pool._id, {
           $inc: {
@@ -184,7 +173,6 @@ class Contributions {
           }
       })
     } catch(err) {
-      console.log('err here', err);
       logger.error(err);
     }
   }
