@@ -1,8 +1,13 @@
 import logger from 'winston';
 import { fractionArrayToPercent } from '../utils/fractions';
+import { PoolStatus } from '../models/pools.model'
+import { ContributionStatus } from '../models/contributions.model'
 /**
  * class to keep feathers cache in sync with pools contract
  */
+
+const UNPAUSED = 'unpaused';
+
 class Pools {
   static get EVENTS() {
     return {
@@ -32,23 +37,34 @@ class Pools {
     if (event.event !== Pools.EVENTS.CONTRACT_INSTANTIATION)
       throw new Error(`pools.deployed only handles ${Pools.EVENTS.CONTRACT_INSTANTIATION} events`);
 
-    const { msgSender, instantiation, hashMessage, transactionHash, event: eventName } = event.returnValues;
+    const {
+      returnValues: {
+        msgSender,
+        instantiation,
+        hashMessage,
+      },
+      transactionHash,
+      event: eventName,
+    } = event;
+
     try {
       const { data: [pool] } = await this.pools.find({
         query: {
           ownerAddress: msgSender,
-          status: 'pending_deployment', // ToDo: after updating to mongo, will place all statuses in enum
+          status: PoolStatus.PENDING_DEPLOYMENT,
           inputsHash: hashMessage,
         },
       });
 
       if (!pool) {
-        logger.warn(`No pool found for contract instantiation event from message sender ${msgSender} and pool contract ${instantiation}`);
+        logger.warn(
+          `No pool found for contract instantiation event from message sender ${msgSender} and pool contract ${instantiation}`,
+        );
         return;
       }
 
       const transaction = await this.transactions.create({
-        poolStatus: 'pending_deployment',
+        poolStatus: PoolStatus.PENDING_DEPLOYMENT,
         txHash: transactionHash,
         poolAddress: instantiation,
         msgSender,
@@ -56,10 +72,10 @@ class Pools {
         data: {},
       });
       return this.pools.patch(pool._id, {
-        status: 'active',
+        status: PoolStatus.ACTIVE,
         contractAddress: instantiation,
         $push: { transactions: transaction.txHash },
-        $unset: { pendingTx: true}
+        $unset: { pendingTx: true },
       });
     } catch (err) {
       logger.error(err);
@@ -69,7 +85,7 @@ class Pools {
     if (event.event !== Pools.EVENTS.CLOSED)
       throw new Error(`pools.closed only handles ${Pools.EVENTS.CLOSED} events`);
 
-    this.updatePool('closed', event);
+    this.updatePool(PoolStatus.CLOSED, event);
   }
   async newTokenBatch(event) {
     if (event.event !== Pools.EVENTS.TOKEN_PAYOUTS_ENABLED)
@@ -77,41 +93,41 @@ class Pools {
         `pools.newTokenBatch only handles ${Pools.EVENTS.TOKEN_PAYOUTS_ENABLED} events`,
       );
     try {
-      await this.updatePool('payout_enabled', event, { $inc: { tokenBatchCount: 1 }});
-      //patch(null=multi, update, params: {query})
-      console.log('event.returnValues.poolContractAddress', event.returnValues.poolContractAddress);
-      await this.contributions.patch( // must come before other patch below
+      await this.updatePool(PoolStatus.PAYOUT_ENABLED, event, { $inc: { tokenBatchCount: 1 } });
+      // patch(null=multi, update, params: {query})
+
+      await this.contributions.patch(
+        // must come before other patch below
         null,
         {
           $push: {
-            statusChangeQueue: 'tokens_available'
-          }
+            statusChangeQueue: ContributionStatus.TOKENS_AVAILABLE,
+          },
         },
         {
           query: {
             poolAddress: event.returnValues.poolContractAddress,
             status: {
-              $in: ['tokens_available', 'pending_claim', 'paused']
-            }
-          }
-        }
+              $in: [ContributionStatus.TOKENS_AVAILABLE, ContributionStatus.PENDING_CLAIM_TOKENS, ContributionStatus.PAUSED],
+            },
+          },
+        },
       );
       await this.contributions.patch(
         null,
         {
-          status: 'tokens_available'
+          status: ContributionStatus.TOKENS_AVAILABLE,
         },
         {
           query: {
             poolAddress: event.returnValues.poolContractAddress,
             status: {
-              $in: ['confirmed', 'claim_made']
-            }
-          }
-        }
+              $in: [ContributionStatus.CONFIRMED, ContributionStatus.TOKENS_CLAIMED],
+            },
+          },
+        },
       );
-
-    } catch(err) {
+    } catch (err) {
       logger.error(err);
     }
   }
@@ -119,81 +135,94 @@ class Pools {
     if (event.event !== Pools.EVENTS.REFUNDS_ENABLED)
       throw new Error(`pools.refundsEnabled only handles ${Pools.EVENTS.REFUNDS_ENABLED} events`);
 
-    await this.updatePool('refunds_enabled', event);
+    await this.updatePool(PoolStatus.REFUNDS_ENABLED, event);
 
     await this.contributions.patch(
       null,
       {
-        status: 'refund_enabled'
+        status: ContributionStatus.REFUND_AVAILABLE,
       },
       {
         query: {
-          poolAddress: event.returnValues.poolContractAddress
-        }
-      }
+          poolAddress: event.returnValues.poolContractAddress,
+        },
+      },
     );
   }
   async paused(event) {
     if (event.event !== Pools.EVENTS.PAUSE)
       throw new Error(`pools.paused only handles ${Pools.EVENTS.PAUSE} events`);
 
-    await this.updatePool('paused', event);
+    await this.updatePool(ContributionStatus.PAUSED, event);
     await this.contributions.patch(
       null,
       {
-        status: 'paused'
+        status: ContributionStatus.PAUSED,
       },
       {
         query: {
-          poolAddress: event.returnValues.poolContractAddress
-        }
-      }
+          poolAddress: event.returnValues.poolContractAddress,
+        },
+      },
     );
-
   }
   async unpaused(event) {
     if (event.event !== Pools.EVENTS.UNPAUSE)
       throw new Error(`pools.paused only handles ${Pools.EVENTS.UNPAUSE} events`);
 
-    this.updatePool('unpaused', event);
+    this.updatePool(UNPAUSED, event);
 
     try {
       const contributions = await this.contributions.find({
         paginate: false,
         query: {
           poolAddress: event.returnValues.poolContractAddress,
-          status: 'paused'
-        }
+          status: ContributionStatus.PAUSED,
+        },
       });
-      await Promise.all(contributions.map(async contribution => {
-        return await this.contributions.patch(contribution._id, { status: contribution.lastStatus });
-      }));
-    } catch(err) {
+      
+      await Promise.all(
+        contributions.map(async contribution => {
+          return await this.contributions.patch(contribution._id, {
+            status: contribution.lastStatus,
+          });
+        }),
+      );
+    } catch (err) {
       logger.error(err);
     }
-
   }
 
   async adminPayoutWalletSet(event) {
     if (event.event !== Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET)
-      throw new Error(`pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`);
+      throw new Error(
+        `pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`,
+      );
 
-    await this.updatePool(null, event, { adminPayoutAddress: event.returnValues.adminPayoutWallet });
+    await this.updatePool(null, event, {
+      adminPayoutAddress: event.returnValues.adminPayoutWallet,
+    });
   }
 
   async adminPoolFeeSet(event) {
     if (event.event !== Pools.EVENTS.ADMIN_POOL_FEE_SET)
-      throw new Error(`pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`);
+      throw new Error(
+        `pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`,
+      );
 
-    await this.updatePool(null, event, { fee: fractionArrayToPercent(event.returnValues.adminPoolFee) });
+    await this.updatePool(null, event, {
+      fee: fractionArrayToPercent(event.returnValues.adminPoolFee),
+    });
   }
 
   async maxAllocationChanged(event) {
     if (event.event !== Pools.EVENTS.MAX_ALLOCATION_CHANGED)
-      throw new Error(`pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`);
+      throw new Error(
+        `pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`,
+      );
 
-    const {fromWei, toBN} = this.web3.utils;
-    await this.updatePool(null, event, { fee: fromWei(toBN(event.returnValues.maxAllocation)) });
+    const { fromWei, toBN } = this.web3.utils;
+    await this.updatePool(null, event, { maxAllocation: parseFloat(fromWei(event.returnValues.maxAllocation)) });
   }
 
   async updatePool(newStatus, event, additionalUpdates) {
@@ -208,9 +237,9 @@ class Pools {
       logger.info(`Creating Transaction object for txHash ${event.transactionHash}`);
 
       const transaction = await this.transactions.create({
-        poolStatus: pool.status, // borrowing the pool or contribution status
+        poolStatus: pool.status,
         txHash: event.transactionHash,
-        poolAddress: pool.address,
+        poolAddress: pool.contractAddress,
         eventName: event.event,
         msgSender: event.returnValues.msgSender,
         data: { ...event.returnValues },
@@ -219,20 +248,26 @@ class Pools {
       // ToDo: check if previous pool status isn't what it's supposed to be
       // logger.warn('previous status incorrect');
 
-      newStatus && logger.info(`Updating status of pool ${pool.contractAddress} from ${pool.status} to ${newStatus}`)
+      newStatus &&
+        logger.info(
+          `Updating status of pool ${pool.contractAddress} from ${pool.status} to ${newStatus}`,
+        );
 
       const payload = {
         $push: { transactions: transaction.txHash },
-        $unset: { pendingTx: true},
-        ...additionalUpdates
-      }
+        $unset: { pendingTx: true },
+        ...additionalUpdates,
+      };
 
       if (newStatus) {
-        payload.status = newStatus
+        payload.status = newStatus;
+      }
+
+      if (newStatus === UNPAUSED ) {
+        payload.status = pool.lastStatus
       }
 
       return await this.pools.patch(pool._id, payload);
-
     } catch (err) {
       logger.error(err);
     }

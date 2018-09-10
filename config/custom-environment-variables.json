@@ -2,6 +2,7 @@
   "blockchain": {
     "keystorePassphrase": "KEYSTORE_PASSPHRASE"
   },
+  "mongodb" : "MONGODB_URI",
   "aws" : {
     "accessKey": "S3_KEY",
     "secretAccessKey": "S3_SECRET"

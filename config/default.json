@@ -7,10 +7,12 @@
     "default": 25,
     "max": 100
   },
+  "mongodb": "mongodb://127.0.0.1:27017/poolbase",
   "nedb": "../data",
   "uploads": "../uploads",
   "uploadsBaseUrl": "http://localhost:3030/uploads/",
   "blockchain": {
+    "startingBlock": 0,
     "nodeUrl": "ws://localhost:8545",
     "poolFactoryAddress": "0x3acc15de35aab8a94b7d2426e27c887541e4de6c",
     "eventEmitterAddress": "0x2c5f3c004878923f55a2a255f89fe29393177509",

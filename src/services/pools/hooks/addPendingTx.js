@@ -47,11 +47,7 @@ export default async context => {
               logger.error(`Missing args to status change ${status}`);
               return new errors.BadRequest( `Missing args for status change ${status}`);
             }
-            console.log('payoutTxData', payoutTxData);
-            console.log('typeof payoutTxData', typeof payoutTxData);
-            console.log('asciiToHex(payoutTxData)', asciiToHex(payoutTxData));
-            console.log('asciiToHex(\'payoutTxData\')', asciiToHex('payoutTxData'));
-            console.log('asciiToHex(\'0xAA\')', asciiToHex('0xAA'));
+            
             //ToDo: validate is Hex on backend
             // ToDo: need to test with smartContract is asciiToHex needed if client is providing a hex string
             poolContractFunctionArgs = [ payoutAddress, asciiToHex(payoutTxData)  ];

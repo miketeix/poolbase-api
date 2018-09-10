@@ -10,10 +10,11 @@ module.exports = {
     get: [],
     create: [commons.disallow('external')],  // unless superAdmin disallow('external')
     update: [
-      commons.disallow('external'), // unless superAdmin disallow('external')
-      updatedAt
+      commons.disallow()
     ],
-    patch: [commons.disallow()],
+    patch: [
+      commons.disallow('external'), // unless superAdmin disallow('external')
+      updatedAt],
     remove: [commons.disallow()],
   },
 

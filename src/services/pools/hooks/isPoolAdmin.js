@@ -6,14 +6,16 @@ import commons from 'feathers-hooks-common';
 export default async (context) => {
   commons.checkContext(context, null, ['get', 'patch'], 'isPoolAdmin');
 
-  if (!context.params.user) return false;
   let pool;
-  try {
-    pool = await context.service.get(context.id);
-  } catch(err) {
-    logger.error(err)
-    return errors.GeneralError('handlePauseUnpause', err);
+  if (context.type === 'after') {
+    pool = context.result
   }
+  if (context.type === 'before') { // ensure hook is used after stashBefore
+    pool = context.params.before
+  }
+
+
+  if (!context.params.user) return false;
 
   if (context.params.user._id === pool.owner._id ) return true;
 
@@ -21,9 +23,10 @@ export default async (context) => {
   if (!userAddresses.length) return false;
 
   const poolAdminAddresses = pool.admins && pool.admins.map(({address}) => address);
-  adminAddresses.push(pool.owner.address);
+  const poolOwnerAddresses = pool.owner.wallets && pool.owner.wallets.map(({address}) => address) || []
+  poolAdminAddresses.push(...poolOwnerAddresses);
 
-  userAdminAddresses = intersection(userAddresses, poolAdminAddresses);
+  const userAdminAddresses = intersection(userAddresses, poolAdminAddresses);
 
   return !!userAdminAddresses.length;
 

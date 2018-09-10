@@ -19,9 +19,10 @@ module.exports = function() {
   app.configure(uploads);
   app.configure(contributions);
   app.configure(transactions);
-  app.configure(fees);
   app.configure(challenges);
   app.configure(whitelist);
   app.configure(gasprice);
   app.configure(ethconversion);
+  
+  app.configure(fees);
 };

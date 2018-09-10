@@ -1,6 +1,6 @@
-// Initializes the `campaigns` service on path `/campaigns`
-const createService = require('feathers-nedb');
-const createModel = require('../../models/pools.model');
+// Initializes the `pools` service on path `/pools`
+import createService from 'feathers-mongoose';
+const { createModel } = require('../../models/pools.model');
 const hooks = require('./pools.hooks');
 const filters = require('./pools.filters');
 

@@ -1,15 +1,26 @@
-const NeDB = require('nedb');
-const path = require('path');
+// user-model.js - A mongoose model
+//
+// See http://mongoosejs.com/docs/models.html
+// for more of what you can do here.
+
+import addressSchema from './schemas/addressSchema';
 
 module.exports = function(app) {
-  const dbPath = app.get('nedb');
-  const Model = new NeDB({
-    filename: path.join(dbPath, 'users.db'),
-    autoload: true,
-  });
+  const mongooseClient = app.get('mongooseClient');
+  const { Schema, SchemaTypes: { Email } } = mongooseClient;
+  const AddressSchema = addressSchema(Schema);
+  const user = new Schema(
+    {
+      email: { type: Email, required: true, index: true, unique: true },
+      password: { type: String, required: true },
+      name: { type: String },
+      wallets: [AddressSchema],
+      avatar: { type: String },
+    },
+    {
+      timestamps: true,
+    },
+  );
 
-// ToDo: make the unique field index based on 'email'
-  Model.ensureIndex({ fieldName: 'email', unique: true });
-
-  return Model;
+  return mongooseClient.model('user', user);
 };

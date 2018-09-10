@@ -1,12 +1,17 @@
-import NeDB from 'nedb';
-import path from 'path';
+// blockchain-model.js - A mongoose model
+//
+// See http://mongoosejs.com/docs/models.html
+// for more of what you can do here.
+module.exports = function(app) {
+  const mongooseClient = app.get('mongooseClient');
+  const { Schema } = mongooseClient;
 
-export default app => {
-  const dbPath = app.get('nedb');
-  const Model = new NeDB({
-    filename: path.join(dbPath, 'blockchain.db'),
-    autoload: true,
-  });
+  const blockchain = new Schema(
+    {
+      blockNumber: { type: Number, required: true },
+    },
+    { timestamps: true },
+  );
 
-  return Model;
+  return mongooseClient.model('blockchain', blockchain);
 };
