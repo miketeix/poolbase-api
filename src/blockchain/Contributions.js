@@ -29,7 +29,7 @@ class Contributions {
       throw new Error(`contributions.contributionMade only handles ${Contributions.EVENTS.CONTRIBUTION_MADE} events`);
 
     const { poolContractAddress, msgSender, contribution } = event.returnValues;
-    const contributionAmount = parseInt(fromWei(contribution), 10);
+    const contributionAmount = parseFloat(fromWei(contribution), 10);
     const query = {
       poolAddress: poolContractAddress,
       ownerAddress: msgSender,
