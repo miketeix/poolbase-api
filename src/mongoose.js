@@ -6,7 +6,7 @@ module.exports = function() {
   const app = this;
   const mongoUrl = app.get('mongodb');
 
-  logger.info('Using Poolbase mongo url', mongoUrl);
+  logger.info('Using Poolbase mongo') // url', mongoUrl);
 
   mongoose.connect(mongoUrl);
   const db = mongoose.connection;
