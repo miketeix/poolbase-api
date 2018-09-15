@@ -7,20 +7,21 @@ import { ContributionStatus } from '../models/contributions.model'
  */
 
 const UNPAUSED = 'unpaused';
+const poolEvents = {
+  CONTRACT_INSTANTIATION: 'ContractInstantiation',
+  CLOSED: 'Closed',
+  TOKEN_PAYOUTS_ENABLED: 'TokenPayoutsEnabled',
+  REFUNDS_ENABLED: 'RefundsEnabled',
+  PAUSE: 'Pause',
+  UNPAUSE: 'Unpause',
+  ADMIN_PAYOUT_WALLET_SET: 'AdminPayoutWalletSet',
+  ADMIN_POOL_FEE_SET: 'AdminPoolFeeSet',
+  MAX_ALLOCATION_CHANGED: 'MaxAllocationChanged',
+};
 
-class Pools {
+class PoolEventHandler {
   static get EVENTS() {
-    return {
-      CONTRACT_INSTANTIATION: 'ContractInstantiation',
-      CLOSED: 'Closed',
-      TOKEN_PAYOUTS_ENABLED: 'TokenPayoutsEnabled',
-      REFUNDS_ENABLED: 'RefundsEnabled',
-      PAUSE: 'Pause',
-      UNPAUSE: 'Unpause',
-      ADMIN_PAYOUT_WALLET_SET: 'AdminPayoutWalletSet',
-      ADMIN_POOL_FEE_SET: 'AdminPoolFeeSet',
-      MAX_ALLOCATION_CHANGED: 'MaxAllocationChanged',
-    };
+    return poolEvents
   }
 
   constructor(app, web3) {
@@ -34,8 +35,8 @@ class Pools {
   }
 
   async deployed(event) {
-    if (event.event !== Pools.EVENTS.CONTRACT_INSTANTIATION)
-      throw new Error(`pools.deployed only handles ${Pools.EVENTS.CONTRACT_INSTANTIATION} events`);
+    if (event.event !== poolEvents.CONTRACT_INSTANTIATION)
+      throw new Error(`pools.deployed only handles ${poolEvents.CONTRACT_INSTANTIATION} events`);
 
     const {
       returnValues: {
@@ -71,26 +72,27 @@ class Pools {
         eventName,
         data: {},
       });
+
       return this.pools.patch(pool._id, {
         status: PoolStatus.ACTIVE,
         contractAddress: instantiation,
         $push: { transactions: transaction.txHash },
-        $unset: { pendingTx: true },
+        $unset: { pendingTx: true, inputsHash: true },
       });
     } catch (err) {
       logger.error(err);
     }
   }
   closed(event) {
-    if (event.event !== Pools.EVENTS.CLOSED)
-      throw new Error(`pools.closed only handles ${Pools.EVENTS.CLOSED} events`);
+    if (event.event !== poolEvents.CLOSED)
+      throw new Error(`pools.closed only handles ${poolEvents.CLOSED} events`);
 
     this.updatePool(PoolStatus.CLOSED, event);
   }
   async newTokenBatch(event) {
-    if (event.event !== Pools.EVENTS.TOKEN_PAYOUTS_ENABLED)
+    if (event.event !== poolEvents.TOKEN_PAYOUTS_ENABLED)
       throw new Error(
-        `pools.newTokenBatch only handles ${Pools.EVENTS.TOKEN_PAYOUTS_ENABLED} events`,
+        `pools.newTokenBatch only handles ${poolEvents.TOKEN_PAYOUTS_ENABLED} events`,
       );
     try {
       await this.updatePool(PoolStatus.PAYOUT_ENABLED, event, { $inc: { tokenBatchCount: 1 } });
@@ -132,8 +134,8 @@ class Pools {
     }
   }
   async refundsEnabled(event) {
-    if (event.event !== Pools.EVENTS.REFUNDS_ENABLED)
-      throw new Error(`pools.refundsEnabled only handles ${Pools.EVENTS.REFUNDS_ENABLED} events`);
+    if (event.event !== poolEvents.REFUNDS_ENABLED)
+      throw new Error(`pools.refundsEnabled only handles ${poolEvents.REFUNDS_ENABLED} events`);
 
     await this.updatePool(PoolStatus.REFUNDS_ENABLED, event);
 
@@ -150,8 +152,8 @@ class Pools {
     );
   }
   async paused(event) {
-    if (event.event !== Pools.EVENTS.PAUSE)
-      throw new Error(`pools.paused only handles ${Pools.EVENTS.PAUSE} events`);
+    if (event.event !== poolEvents.PAUSE)
+      throw new Error(`pools.paused only handles ${poolEvents.PAUSE} events`);
 
     await this.updatePool(ContributionStatus.PAUSED, event);
     await this.contributions.patch(
@@ -167,8 +169,8 @@ class Pools {
     );
   }
   async unpaused(event) {
-    if (event.event !== Pools.EVENTS.UNPAUSE)
-      throw new Error(`pools.paused only handles ${Pools.EVENTS.UNPAUSE} events`);
+    if (event.event !== poolEvents.UNPAUSE)
+      throw new Error(`pools.paused only handles ${poolEvents.UNPAUSE} events`);
 
     this.updatePool(UNPAUSED, event);
 
@@ -180,7 +182,7 @@ class Pools {
           status: ContributionStatus.PAUSED,
         },
       });
-      
+
       await Promise.all(
         contributions.map(async contribution => {
           return await this.contributions.patch(contribution._id, {
@@ -194,9 +196,9 @@ class Pools {
   }
 
   async adminPayoutWalletSet(event) {
-    if (event.event !== Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET)
+    if (event.event !== poolEvents.ADMIN_PAYOUT_WALLET_SET)
       throw new Error(
-        `pools.adminPayoutWalletSet only handles ${Pools.EVENTS.ADMIN_PAYOUT_WALLET_SET} events`,
+        `pools.adminPayoutWalletSet only handles ${poolEvents.ADMIN_PAYOUT_WALLET_SET} events`,
       );
 
     await this.updatePool(null, event, {
@@ -205,9 +207,9 @@ class Pools {
   }
 
   async adminPoolFeeSet(event) {
-    if (event.event !== Pools.EVENTS.ADMIN_POOL_FEE_SET)
+    if (event.event !== poolEvents.ADMIN_POOL_FEE_SET)
       throw new Error(
-        `pools.adminPoolFeeSet only handles ${Pools.EVENTS.ADMIN_POOL_FEE_SET} events`,
+        `pools.adminPoolFeeSet only handles ${poolEvents.ADMIN_POOL_FEE_SET} events`,
       );
 
     await this.updatePool(null, event, {
@@ -216,9 +218,9 @@ class Pools {
   }
 
   async maxAllocationChanged(event) {
-    if (event.event !== Pools.EVENTS.MAX_ALLOCATION_CHANGED)
+    if (event.event !== poolEvents.MAX_ALLOCATION_CHANGED)
       throw new Error(
-        `pools.maxAllocationChanged only handles ${Pools.EVENTS.MAX_ALLOCATION_CHANGED} events`,
+        `pools.maxAllocationChanged only handles ${poolEvents.MAX_ALLOCATION_CHANGED} events`,
       );
 
     const { fromWei, toBN } = this.web3.utils;
@@ -274,4 +276,4 @@ class Pools {
   }
 }
 
-export default Pools;
+export default PoolEventHandler;

@@ -1,7 +1,12 @@
 import logger from 'winston';
-import Pools from './Pools';
-import Contributions from './Contributions';
+
+import PoolEventHandler from './PoolEventHandler';
+import ContributionEventHandler from './ContributionEventHandler';
+
 import createModel from '../models/blockchain.model'; // for storing blocknumber in db
+
+import poolbaseFactoryAbi from './contracts/PoolbaseFactoryAbi.json';
+import poolbaseEventEmitterAbi from './contracts/PoolbaseEventEmitterAbi.json';
 
 const { EVENTS: {
   CONTRACT_INSTANTIATION,
@@ -13,34 +18,24 @@ const { EVENTS: {
   ADMIN_PAYOUT_WALLET_SET,
   ADMIN_POOL_FEE_SET,
   MAX_ALLOCATION_CHANGED,
-}} = Pools;
+}} = PoolEventHandler;
 
 const { EVENTS: {
   CONTRIBUTION_MADE,
   TOKEN_CLAIMED,
   REFUNDED,
-}} = Contributions;
-
-// Storing this in the db ensures that we don't miss any events on a restart
-const defaultConfig = {
-  lastBlock: undefined,
-};
+}} = ContributionEventHandler;
 
 export default class {
-  constructor(app, web3, poolbaseFactory, poolbaseEventEmitter, poolbase, opts) {
+  constructor(app) {
     this.app = app;
-    this.web3 = web3;
-    this.poolbaseFactory = poolbaseFactory;
-    this.poolbaseEventEmitter = poolbaseEventEmitter;
-    this.poolbase = poolbase;
+    this.web3 = app.getWeb3();
 
-    this.pools = new Pools(app, this.poolbase);
-    this.contributions = new Contributions(app, this.poolbase);
-    this.model = createModel(app); // for storing blocknumber in db
+    this.PoolEventHandler = new PoolEventHandler(app);
+    this.ContributionEventHandler = new ContributionEventHandler(app);
 
-    if (opts.startingBlock && opts.startingBlock !== 0) {
-      defaultConfig.lastBlock = opts.startingBlock - 1;
-    }
+    const mongooseClient = app.get('mongooseClient');
+    this.blockchainMongooseModel = mongooseClient.models.blockchain || createModel(app); // for storing blocknumber in db
 
     this.subscribePoolFactoryEvents = this.subscribePoolFactoryEvents.bind(this)
     this.subscribePoolbaseEvents = this.subscribePoolbaseEvents.bind(this)
@@ -49,14 +44,29 @@ export default class {
   /**
    * subscribe to all events that we are interested in
    */
-  start() {
+  async start() {
     // starts listening to all events emitted by poolbase
-    this.getConfig().then(config => {
-      this.config = config;
-      this.subscribePoolFactoryEvents();
-      this.subscribePoolbaseEvents();
-    });
+    const { poolFactoryAddress, eventEmitterAddress } = this.app.get('blockchain');
 
+    this.poolbaseFactory = await new this.web3.eth.Contract(
+      poolbaseFactoryAbi,
+      poolFactoryAddress,
+    );
+
+    this.poolbaseEventEmitter = await new this.web3.eth.Contract(
+      poolbaseEventEmitterAbi,
+      eventEmitterAddress,
+    );
+
+    this.config = await this.getConfig();
+
+    this.subscribePoolFactoryEvents();
+    this.subscribePoolbaseEvents();
+  }
+
+  stop() {
+    this.factorySubscription.unsubscribe()
+    this.poolbaseSubscription.unsubscribe()
   }
 
   // semi-private methods:
@@ -66,7 +76,7 @@ export default class {
    */
   subscribePoolFactoryEvents() {
     // starts a listener on the pool factory contract
-    this.poolbaseFactory.events
+    this.factorySubscription = this.poolbaseFactory.events
       .allEvents({ fromBlock: this.config.lastBlock + 1 || 1 })
       .on('data', this.handleEvent.bind(this))
       .on('changed', event => {
@@ -83,7 +93,7 @@ export default class {
    */
   subscribePoolbaseEvents() {
     // starts a listener on the liquidPledging contract
-    this.poolbaseEventEmitter.events
+    this.poolbaseSubscription = this.poolbaseEventEmitter.events
       .allEvents({ fromBlock: this.config.lastBlock + 1 || 1 })
       .on('data', this.handleEvent.bind(this))
       .on('changed', event => {
@@ -103,8 +113,18 @@ export default class {
    * @private
    */
   getConfig() {
+
+    const { startingBlock } = this.app.get('blockchain');
+    const defaultConfig = {
+      lastBlock: undefined
+    };
+
+    if (startingBlock && startingBlock !== 0) {
+      defaultConfig.lastBlock = startingBlock - 1;
+    }
+
     return new Promise((resolve, reject) => {
-      this.model.findOne({}, 'lastBlock', { lean: true}, (err, doc) => {
+      this.blockchainMongooseModel.findOne({}, 'lastBlock', { lean: true}, (err, doc) => {
         if (err) {
           reject(err);
           return;
@@ -126,10 +146,10 @@ export default class {
    * @param blockNumber
    * @private
    */
-  updateConfig(blockNumber) {
+  async updateConfig(blockNumber) {
     let onConfigInitialization;
     if (this.initializingConfig) {
-      onConfigInitialization = () => this.updateConfig(blockNumber);
+      onConfigInitialization = async() => await this.updateConfig(blockNumber);
       return;
     }
 
@@ -139,86 +159,74 @@ export default class {
       if (!this.config._id) this.initializingConfig = true;
 
       const docId = this.config._id || null;
-      this.model.findOneAndUpdate(docId, {
-        lastBlock: this.config.lastBlock
-      }, {
-          upsert: true,
-          new: true,
-          lean: true,
-          strict: false
-      }).then((doc, err) => {
-        this.initializingConfig = false;
-        if (err) logger.error('updateConfig ->', err);
 
+      try {
+        const doc = await this.blockchainMongooseModel.findOneAndUpdate(docId, {
+          lastBlock: this.config.lastBlock
+        }, {
+            upsert: true,
+            new: true,
+            lean: true,
+            strict: false
+        });
+        this.initializingConfig = false;
         if (doc) {
           this.config._id = doc._id;
-          this.initializingConfig = false;
           if (onConfigInitialization) onConfigInitialization();
         }
-      });
+      } catch(err) {
+        if (err) logger.error('updateConfig err ->', err);
+      }
     }
   }
 
-  handleEvent(event) {
-    this.updateConfig(event.blockNumber);
+  async handleEvent(poolbaseEvent) {
+    logger.info('handlingEvent: ', poolbaseEvent);
 
-    logger.info('handlingEvent: ', event);
+    const { event: eventName, blockNumber } = poolbaseEvent;
+    await this.updateConfig(blockNumber);
 
-    switch (event.event) {
-      // PoolbaseFactory events
-      case CONTRACT_INSTANTIATION:
-      this.pools.deployed(event);
-      break;
+    const {
+      deployed,
+      closed,
+      newTokenBatch,
+      refundsEnabled,
+      paused,
+      unpaused,
+      adminPayoutWalletSet,
+      adminPoolFeeSet,
+      maxAllocationChanged,
+    } = this.PoolEventHandler;
 
+    const {
+      contributionMade,
+      tokenClaimed,
+      refunded,
+    } = this.ContributionEventHandler;
+
+    const eventHandlerMap = {
+      // PoolbaseFactory
+      [CONTRACT_INSTANTIATION]: deployed,
       // PoolbaseEventEmitter events
-      //      ** Pool Events **
-      case CLOSED:
-      this.pools.closed(event);
-      break;
-
-      case TOKEN_PAYOUTS_ENABLED:
-      this.pools.newTokenBatch(event);
-      break;
-
-      case REFUNDS_ENABLED:
-      this.pools.refundsEnabled(event);
-      break;
-
-      case PAUSE:
-      this.pools.paused(event);
-      break;
-
-      case UNPAUSE:
-      this.pools.unpaused(event);
-      break;
-
-      case ADMIN_PAYOUT_WALLET_SET:
-      this.pools.adminPayoutWalletSet(event);
-      break;
-
-      case ADMIN_POOL_FEE_SET:
-      this.pools.adminPoolFeeSet(event);
-      break;
-
-      case MAX_ALLOCATION_CHANGED:
-      this.pools.maxAllocationChanged(event);
-      break;
-
-      //      ** Contribution Events **
-      case CONTRIBUTION_MADE:
-      this.contributions.contributionMade(event);
-      break;
-
-      case TOKEN_CLAIMED:
-      this.contributions.tokenClaimed(event);
-      break;
-
-      case REFUNDED:
-      this.contributions.refunded(event);
-      break;
-
-      default:
-        logger.error('Unknown event: ', event);
+      //  Pools
+      [CLOSED]: closed,
+      [TOKEN_PAYOUTS_ENABLED]: newTokenBatch,
+      [REFUNDS_ENABLED]: refundsEnabled,
+      [PAUSE]: paused,
+      [UNPAUSE]: unpaused,
+      [ADMIN_PAYOUT_WALLET_SET]: adminPayoutWalletSet,
+      [ADMIN_POOL_FEE_SET]: adminPoolFeeSet,
+      [MAX_ALLOCATION_CHANGED]: maxAllocationChanged,
+      //  Contributions
+      [CONTRIBUTION_MADE]: contributionMade,
+      [TOKEN_CLAIMED]: tokenClaimed,
+      [REFUNDED]: refunded,
     }
+
+    const eventHandler = eventHandlerMap[eventName] ;
+
+    if ( eventHandler ) eventHandler(poolbaseEvent);
+      else logger.error('Unknown event: ', eventName);
+
   }
 }
