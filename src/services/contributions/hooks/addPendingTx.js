@@ -57,9 +57,15 @@ export default async context => {
   if (status === 'pending_confirmation') {
     amount = toWei(contributionAmount.toString());
   }
+  console.log('amount', amount);
+  console.log('typeof amount', typeof amount);
+  
   const data = web3.eth.abi.encodeFunctionCall(functionAbi, [signature]);
   let gasLimit;
   try {
+    console.log('poolAddress', poolAddress);
+    console.log('functionName', functionName);
+    console.log('signature', signature);
     gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, functionName, [signature]);
   } catch (estimateGasError) {
     console.log('estimateGasError', estimateGasError);

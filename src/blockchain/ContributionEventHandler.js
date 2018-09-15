@@ -25,7 +25,7 @@ class ContributionEventHandler {
     this.transactions = this.app.service('transactions');
   }
 
-  async contributionMade(event) {
+  contributionMade = async (event) => {
     if (event.event !== contributionEvents.CONTRIBUTION_MADE)
       throw new Error(`contributions.contributionMade only handles ${contributionEvents.CONTRIBUTION_MADE} events`);
 
@@ -41,7 +41,8 @@ class ContributionEventHandler {
 
     this.updatePoolOnContribution(newContribution.pool, contributionAmount);
   }
-  async tokenClaimed(event) {
+
+  tokenClaimed = async (event) => {
     if (event.event !== contributionEvents.TOKEN_CLAIMED)
       throw new Error(`contributions.tokenClaimed only handles ${contributionEvents.TOKEN_CLAIMED} events`);
 
@@ -108,7 +109,7 @@ class ContributionEventHandler {
     // call updateTokenTotal, or updateEthTotal on PoolsService
 
   }
-  refunded(event) {
+  refunded = (event) => {
     if (event.event !== contributionEvents.REFUNDED)
       throw new Error(`contributions.refunded only handles ${contributionEvents.REFUNDED} events`);
 
@@ -125,7 +126,7 @@ class ContributionEventHandler {
 
   }
 
-  async updateContribution(query, newStatus, event) {
+  updateContribution = async (query, newStatus, event) => {
     try {
       const { data: [contribution] } = await this.contributions
         .find({
@@ -161,7 +162,7 @@ class ContributionEventHandler {
       logger.error(err);
     };
   }
-  async updatePoolOnContribution(pool, contributionAmount ) {
+  updatePoolOnContribution = async (pool, contributionAmount ) => {
     try {
 
       if (!pool) return logger.warn(`No pool provided to updatePoolOnContribution`);
