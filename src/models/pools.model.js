@@ -40,7 +40,7 @@ function createModel(app) {
       payoutTxData: { type: String },
       adminPayoutAddress: { type: String, required: true },
       poolbaseFee: { type: Number, required: true },
-      inputsHash: { type: String, required: true },
+      inputsHash: { type: String },
       name: { type: String, required: true },
       description: { type: String, required: true },
       minContribution: { type: Number, required: true },

@@ -6,14 +6,15 @@ import { ContributionStatus } from '../models/contributions.model';
 /**
  * class to keep feathers contributions cache in sync with pools contract
  */
-class Contributions {
-  static get EVENTS() {
+const contributionEvents = {
+    CONTRIBUTION_MADE: 'ContributionMade',
+    TOKEN_CLAIMED: 'TokenClaimed',
+    REFUNDED: 'Refunded'
+}
 
-    return {
-        CONTRIBUTION_MADE: 'ContributionMade',
-        TOKEN_CLAIMED: 'TokenClaimed',
-        REFUNDED: 'Refunded'
-    }
+class ContributionEventHandler {
+  static get EVENTS() {
+    return contributionEvents
   }
 
   constructor(app, web3) {
@@ -25,8 +26,8 @@ class Contributions {
   }
 
   async contributionMade(event) {
-    if (event.event !== Contributions.EVENTS.CONTRIBUTION_MADE)
-      throw new Error(`contributions.contributionMade only handles ${Contributions.EVENTS.CONTRIBUTION_MADE} events`);
+    if (event.event !== contributionEvents.CONTRIBUTION_MADE)
+      throw new Error(`contributions.contributionMade only handles ${contributionEvents.CONTRIBUTION_MADE} events`);
 
     const { poolContractAddress, msgSender, contribution } = event.returnValues;
     const contributionAmount = parseFloat(fromWei(contribution), 10);
@@ -41,8 +42,8 @@ class Contributions {
     this.updatePoolOnContribution(newContribution.pool, contributionAmount);
   }
   async tokenClaimed(event) {
-    if (event.event !== Contributions.EVENTS.TOKEN_CLAIMED)
-      throw new Error(`contributions.tokenClaimed only handles ${Contributions.EVENTS.TOKEN_CLAIMED} events`);
+    if (event.event !== contributionEvents.TOKEN_CLAIMED)
+      throw new Error(`contributions.tokenClaimed only handles ${contributionEvents.TOKEN_CLAIMED} events`);
 
     const { poolContractAddress, msgSender, amount, token } = event.returnValues;
     const query = {
@@ -108,8 +109,8 @@ class Contributions {
 
   }
   refunded(event) {
-    if (event.event !== Contributions.EVENTS.REFUNDED)
-      throw new Error(`contributions.refunded only handles ${Contributions.EVENTS.REFUNDED} events`);
+    if (event.event !== contributionEvents.REFUNDED)
+      throw new Error(`contributions.refunded only handles ${contributionEvents.REFUNDED} events`);
 
     const { poolContractAddress, msgSender, weiAmount } = event.returnValues;
     const query = {
@@ -178,4 +179,4 @@ class Contributions {
   }
 }
 
-export default Contributions;
+export default ContributionEventHandler;
