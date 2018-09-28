@@ -20,6 +20,7 @@ export default async context => {
   const web3 = new Web3(nodeUrl);
 
   const { status, ownerAddress, poolAddress, amount: contributionAmount } = context.data;
+  const { poolFactoryAddress } = context.app.get('blockchain');
 
   let functionName;
   switch (status) {
@@ -60,12 +61,14 @@ export default async context => {
   const data = web3.eth.abi.encodeFunctionCall(functionAbi, [signature]);
   let gasLimit;
   try {
-    console.log('poolAddress', poolAddress);
+    console.log('poolbaseLibraryAddress', poolbaseLibraryAddress);
     console.log('functionName', functionName);
     console.log('signature', signature);
+
     gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, functionName, [signature], {
       from: ownerAddress,
     });
+
   } catch (estimateGasError) {
     console.log('estimateGasError', estimateGasError);
   }
