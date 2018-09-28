@@ -5,7 +5,6 @@ import { soliditySha3, toWei } from 'web3-utils';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
 
 import poolbaseAbi from '../../../blockchain/contracts/PoolbaseAbi.json';
-import poolbaseFactoryAbi from '../../../blockchain/contracts/PoolbaseFactoryAbi.json';
 
 export default async context => {
   checkContext(context, 'before', ['patch', 'create']);
@@ -60,19 +59,15 @@ export default async context => {
   console.log('amount', amount);
   console.log('typeof amount', typeof amount);
 
-  // get poolbase library address from poolbaseCloneFactory
-  const poolbaseFactory = new web3.eth.Contract(poolbaseFactoryAbi, poolFactoryAddress);
-  const poolbaseLibraryAddress = await poolbaseFactory.libraryAddress();
-
   const data = web3.eth.abi.encodeFunctionCall(functionAbi, [signature]);
   let gasLimit;
   try {
     console.log('poolbaseLibraryAddress', poolbaseLibraryAddress);
     console.log('functionName', functionName);
     console.log('signature', signature);
-    gasLimit = await estimateGas(web3, poolbaseAbi, poolbaseLibraryAddress, functionName, [
-      signature,
-    ]);
+    gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, functionName, [signature], {
+      from: ownerAddress,
+    });
   } catch (estimateGasError) {
     console.log('estimateGasError', estimateGasError);
   }
