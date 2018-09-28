@@ -42,7 +42,7 @@ function createModel(app) {
       poolbaseFee: { type: Number, required: true },
       inputsHash: { type: String },
       name: { type: String, required: true },
-      description: { type: String, required: true },
+      description: { type: String },
       minContribution: { type: Number, required: true },
       maxContribution: { type: Number, required: true },
       admins: [ AddressSchema ],
