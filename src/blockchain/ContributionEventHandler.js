@@ -31,9 +31,13 @@ class ContributionEventHandler {
 
     const { poolContractAddress, msgSender, contribution } = event.returnValues;
     const contributionAmount = parseFloat(fromWei(contribution), 10);
-    const ownerAddressToLowerCase = msgSender.toLowerCase();
-    const query = { poolAddress: poolContractAddress, ownerAddress: ownerAddressToLowerCase, status: ContributionStatus.PENDING_CONFIRMATION, amount: contributionAmount };
 
+    const query = {
+     poolAddress: poolContractAddress,
+     ownerAddress: msgSender,
+     status: ContributionStatus.PENDING_CONFIRMATION,
+     amount: contributionAmount
+   };
     const newContribution = await this.updateContribution(query, ContributionStatus.CONFIRMED, event);
 
     this.updatePoolOnContribution(newContribution.pool, contributionAmount);
@@ -159,7 +163,7 @@ class ContributionEventHandler {
       logger.error(err);
     };
   }
-  
+
   updatePoolOnContribution = async (pool, contributionAmount ) => {
     try {
 
