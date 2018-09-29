@@ -3,11 +3,12 @@ export const estimateGas = async (
   abi,
   instanceAddress,
   functionName,
-  params = []) => {
-    const contract = new web3.eth.Contract(abi, instanceAddress);
-    return await contract.methods[functionName](...params).estimateGas();
-}
+  params = [],
+  opts = {},
+) => {
+  const contract = new web3.eth.Contract(abi, instanceAddress);
+  return await contract.methods[functionName](...params).estimateGas(opts);
+};
 
-export const getFunctionAbiByName = (abi, functionName) => {
-  return abi.find(({ name, type }) => name === functionName && type === 'function');
-}
+export const getFunctionAbiByName = (abi, functionName) =>
+  abi.find(({ name, type }) => name === functionName && type === 'function');

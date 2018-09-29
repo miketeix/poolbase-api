@@ -8,6 +8,8 @@ import sanitizeAddress from '../../hooks/sanitizeAddress';
 import setAddress from '../../hooks/setAddress';
 import setUserId from '../../hooks/setUserId';
 import setStatus from '../../hooks/setStatus';
+import sanitizePayloadAddresses from '../../hooks/sanitizePayloadAddresses';
+import protectFromUpdate from '../../hooks/protectFromUpdate';
 import { addLastStatus } from '../../hooks/addLastStatus';
 import addPendingTx from './hooks/addPendingTx';
 import checkPoolWhitelist from './hooks/checkPoolWhitelist';
@@ -33,6 +35,10 @@ module.exports = {
     ],
     get: [],
     create: [
+      sanitizePayloadAddresses([
+        { fieldName: 'ownerAddress' },
+        { fieldName: 'poolAddress' },
+      ]),
       checkPoolWhitelist,
       setStatus('pending_confirmation'),
       createdAt,
@@ -42,6 +48,12 @@ module.exports = {
     update: [commons.disallow()],
     // update: [ sanitizeAddress('contributorAddress', { validate: true }), updatedAt],
     patch: [
+      protectFromUpdate([
+        'ownerAddress',
+        'poolAddress',
+        'owner',
+        'amount'
+      ]),
       // restrict,
       // sanitizeAddress('contributorAddress', { validate: true }),
       // commons.stashBefore(), // can't be multi where id is null, maybe check somehow
