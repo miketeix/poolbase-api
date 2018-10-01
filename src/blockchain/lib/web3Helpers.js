@@ -2,7 +2,7 @@ const Web3 = require('web3');
 const logger = require('winston');
 const EventEmitter = require('events');
 
-const THIRTY_SECONDS = 30 * 1000;
+const TWENTY_SECONDS = 20 * 1000;
 
 // if the websocket connection drops, attempt to re-connect
 // upon successful re-connection, we re-start all listeners
@@ -14,7 +14,7 @@ const reconnectOnEnd = (web3, nodeUrl) => {
     logger.error(`connection closed reason: ${e.reason}, code: ${e.code}`);
 
     web3.pingInterval = undefined;
-    
+
 
     web3.reconnectInterval = setInterval(() => {
       logger.info('attempting to reconnect');
@@ -34,7 +34,7 @@ const reconnectOnEnd = (web3, nodeUrl) => {
         reconnectOnEnd(web3, nodeUrl);
         web3.emit(web3.RECONNECT_EVENT);
       });
-    }, THIRTY_SECONDS);
+    }, TWENTY_SECONDS);
   });
 };
 
