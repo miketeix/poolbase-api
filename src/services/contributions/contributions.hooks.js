@@ -54,8 +54,6 @@ module.exports = {
         'owner',
         'amount'
       ]),
-      // restrict,
-      // sanitizeAddress('contributorAddress', { validate: true }),
       // commons.stashBefore(), // can't be multi where id is null, maybe check somehow
       restrictToOwner({ idField: '_id', ownerField: 'owner'}),
       commons.iff((({data: { status }}) => (['pending_claim_tokens', 'pending_refund'].includes(status))),

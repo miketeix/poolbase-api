@@ -25,3 +25,16 @@ export const parseObjectValuesToChecksum = (o) => {
 
   return o;
 }
+
+export const getUserAdminAddress = (user, pool) => {
+  const { wallets } = user;
+  const { ownerAddress, admins } = pool;
+
+  const userAddresses = wallets.map(wallet => wallet.address);
+  const poolAdminAddresses = admins.map(admin => admin.address);
+  poolAdminAddresses.unshift(ownerAddress);
+
+  return  userAddresses
+            .filter(userAddress => poolAdminAddresses.includes(userAddress))
+            .shift();
+}

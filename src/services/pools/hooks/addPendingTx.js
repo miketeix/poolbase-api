@@ -5,6 +5,7 @@ import { setByDot, checkContext } from 'feathers-hooks-common';
 import { soliditySha3, hexToNumber, toWei, toBN, asciiToHex } from 'web3-utils';
 
 import { percentToFractionArray } from '../../../utils/fractions';
+import { getUserAdminAddress } from '../../../utils/addresses';
 import { estimateGas, getFunctionAbiByName } from '../../../utils/blockchain';
 
 import poolbaseAbi from '../../../blockchain/contracts/PoolbaseAbi.json';
@@ -47,7 +48,7 @@ export default async context => {
               logger.error(`Missing args to status change ${status}`);
               return new errors.BadRequest( `Missing args for status change ${status}`);
             }
-            
+
             //ToDo: validate is Hex on backend
             // ToDo: need to test with smartContract is asciiToHex needed if client is providing a hex string
             poolContractFunctionArgs = [ payoutAddress, asciiToHex(payoutTxData)  ];
@@ -86,15 +87,30 @@ export default async context => {
       return context;
     }
 
-    const { contractAddress: poolAddress } = context.params.before;
+    const { contractAddress: poolAddress, ownerAddress, admins } = context.params.before;
+    const { wallets } = context.params.user;
 
+    const fromAddress = getUserAdminAddress(context.params.user, context.params.before);
+
+    if (!fromAddress) throw "User's wallets do not registered pool admin address";
+    
     const functionAbi = getFunctionAbiByName(poolbaseAbi, poolContractFunctionName);
 
-    const gasLimit = await estimateGas(web3, poolbaseAbi, poolAddress, poolContractFunctionName, poolContractFunctionArgs);
+    const gasLimit = await estimateGas(
+      web3,
+      poolbaseAbi,
+      poolAddress,
+      poolContractFunctionName,
+      poolContractFunctionArgs,
+      {
+        from: fromAddress,
+      }
+    );
 
     const data = web3.eth.abi.encodeFunctionCall(functionAbi, poolContractFunctionArgs);
     // ToDo: add gasPrice
     const pendingTx = {
+      fromAddress,
       toAddress: poolAddress,
       amount: 0,
       gasLimit,
