@@ -56,7 +56,11 @@ module.exports = {
       ]),
       // commons.stashBefore(), // can't be multi where id is null, maybe check somehow
       restrictToOwner({ idField: '_id', ownerField: 'owner'}),
-      commons.iff((({data: { status }}) => (['pending_claim_tokens', 'pending_refund'].includes(status))),
+      commons.iff((({data: { status }}) => (
+        [
+          'pending_claim_tokens', 
+          'pending_refund'
+        ].includes(status))),
         addPendingTx),
       // addLastStatus,
       updatedAt,
