@@ -32,6 +32,15 @@ class PoolEventHandler {
     this.contributions = this.app.service('contributions');
 
     this.deployed = this.deployed.bind(this);
+    this.closed = this.closed.bind(this);
+    this.newTokenBatch = this.newTokenBatch.bind(this);
+    this.refundsEnabled = this.refundsEnabled.bind(this);
+    this.paused = this.paused.bind(this);
+    this.unpaused = this.unpaused.bind(this);
+    this.adminPayoutWalletSet = this.adminPayoutWalletSet.bind(this);
+    this.adminPoolFeeSet = this.adminPoolFeeSet.bind(this);
+    this.maxAllocationChanged = this.maxAllocationChanged.bind(this);
+    this.updatePool = this.updatePool.bind(this);
   }
 
   async deployed(event) {
@@ -201,7 +210,7 @@ class PoolEventHandler {
         `pools.adminPayoutWalletSet only handles ${poolEvents.ADMIN_PAYOUT_WALLET_SET} events`,
       );
 
-    await this.updatePool(null, event, {
+    this.updatePool(null, event, {
       adminPayoutAddress: event.returnValues.adminPayoutWallet,
     });
   }
@@ -212,7 +221,7 @@ class PoolEventHandler {
         `pools.adminPoolFeeSet only handles ${poolEvents.ADMIN_POOL_FEE_SET} events`,
       );
 
-    await this.updatePool(null, event, {
+    this.updatePool(null, event, {
       fee: fractionArrayToPercent(event.returnValues.adminPoolFee),
     });
   }
@@ -224,7 +233,7 @@ class PoolEventHandler {
       );
 
     const { fromWei, toBN } = this.web3.utils;
-    await this.updatePool(null, event, { maxAllocation: parseFloat(fromWei(event.returnValues.maxAllocation)) });
+    this.updatePool(null, event, { maxAllocation: parseFloat(fromWei(event.returnValues.maxAllocation)) });
   }
 
   async updatePool(newStatus, event, additionalUpdates) {
