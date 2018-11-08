@@ -42,6 +42,7 @@ function createModel(app) {
       inputsHash: { type: String },
       name: { type: String, required: true },
       description: { type: String },
+      disclaimer: { type: String },
       minContribution: { type: Number, required: true },
       maxContribution: { type: Number, required: true },
       admins: [AddressSchema],
